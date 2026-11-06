@@ -46,7 +46,7 @@ export default function LandingPage({ onGoToFunnel }: LandingPageProps) {
         <section className="relative isolate overflow-hidden border-b border-[#b38318]/30 bg-[#111111] text-white">
           <div className="absolute inset-y-0 right-0 hidden w-[58%] sm:block">
             <img
-              src="/images/5145370146758135874_121.jpg"
+              src="images/5145370146758135874_121.jpg"
               alt="Richard Chiang, sales and leasing consultant"
               className="h-full w-full object-cover object-top"
             />
@@ -92,7 +92,7 @@ export default function LandingPage({ onGoToFunnel }: LandingPageProps) {
             </div>
             <div className="relative mt-10 h-[360px] w-full sm:hidden">
               <img
-                src="/images/5145370146758135874_121.jpg"
+                src="images/5145370146758135874_121.jpg"
                 alt="Richard Chiang, sales and leasing consultant"
                 className="h-full w-full object-cover object-top"
               />
