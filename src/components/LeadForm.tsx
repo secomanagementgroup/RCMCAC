@@ -102,6 +102,12 @@ export default function LeadForm() {
       payload.vehicle_vin = vehicleVin.trim() || null;
     }
 
+    if (!supabase) {
+      setFormState('error');
+      setErrorMsg('This form is temporarily unavailable. Please try again later.');
+      return;
+    }
+
     const { error } = await supabase.from('leads').insert(payload);
 
     if (error) {

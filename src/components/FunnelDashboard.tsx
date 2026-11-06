@@ -45,6 +45,14 @@ export default function FunnelDashboard({ onGoToLanding }: FunnelDashboardProps)
   const fetchLeads = useCallback(async () => {
     setLoading(true);
     setError('');
+
+    if (!supabase) {
+      setLeads([]);
+      setError('The lead dashboard is temporarily unavailable.');
+      setLoading(false);
+      return;
+    }
+
     const { data, error: err } = await supabase
       .from('leads')
       .select('*')
@@ -62,6 +70,11 @@ export default function FunnelDashboard({ onGoToLanding }: FunnelDashboardProps)
   }, [fetchLeads]);
 
   async function updateLeadStatus(leadId: string, status: LeadStatus) {
+    if (!supabase) {
+      setError('The lead dashboard is temporarily unavailable.');
+      return;
+    }
+
     setLeads((prev) =>
       prev.map((l) => (l.id === leadId ? { ...l, status } : l))
     );
