@@ -74,11 +74,19 @@ export default function LandingPage({ onGoToFunnel }: LandingPageProps) {
               <div className="mt-7 flex flex-wrap gap-3 text-sm font-semibold text-[#f4f1e8]">
                 <span className="inline-flex items-center gap-2 rounded-full border border-[#d8c28a]/70 bg-[#2a2519]/90 px-4 py-2 backdrop-blur-sm">
                   <CheckCircle2 className="h-4 w-4 text-[#e0bb54]" />
+                  Transparent pricing
+                </span>
+                <span className="inline-flex items-center gap-2 rounded-full border border-[#d8c28a]/70 bg-[#2a2519]/90 px-4 py-2 backdrop-blur-sm">
+                  <CheckCircle2 className="h-4 w-4 text-[#e0bb54]" />
                   No pressure
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-[#d8c28a]/70 bg-[#2a2519]/90 px-4 py-2 backdrop-blur-sm">
                   <Clock3 className="h-4 w-4 text-[#e0bb54]" />
                   Fast response
+                </span>
+                <span className="inline-flex items-center gap-2 rounded-full border border-[#d8c28a]/70 bg-[#2a2519]/90 px-4 py-2 backdrop-blur-sm">
+                  <CheckCircle2 className="h-4 w-4 text-[#e0bb54]" />
+                  Professional service
                 </span>
               </div>
             </div>
