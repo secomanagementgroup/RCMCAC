@@ -1,10 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Loader2, Mail, Send, Trash2, Clock, CheckCircle2, X, UserPlus, Copy, ExternalLink } from 'lucide-react';
+import { Loader2, Mail, Send, Trash2, Clock, CheckCircle2, X, UserPlus, Copy, ExternalLink, Info } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { Invite, Profile } from '@/lib/types';
 
 interface AdminInviteProps {
   onClose: () => void;
+}
+
+function getBaseUrl(): string {
+  const path = window.location.pathname.replace(/index\.html$/, '');
+  const normalized = path.endsWith('/') ? path : path + '/';
+  return window.location.origin + normalized;
 }
 
 export default function AdminInvite({ onClose }: AdminInviteProps) {
@@ -61,10 +67,9 @@ export default function AdminInvite({ onClose }: AdminInviteProps) {
     }
 
     const invite = data as Invite;
-    const siteOrigin = window.location.origin;
-    const inviteLink = `${siteOrigin}/#invite=${invite.token}`;
+    const inviteLink = `${getBaseUrl()}#invite=${invite.token}`;
 
-    setSuccess(`Invitation created! Share this link with ${email}:`);
+    setSuccess(`Invitation created for ${email}! The link has been copied — paste it into an email or message and send it to them.`);
     setEmail('');
     await fetchInvites();
     setLoading(false);
@@ -82,7 +87,7 @@ export default function AdminInvite({ onClose }: AdminInviteProps) {
   }
 
   function getInviteLink(token: string) {
-    return `${window.location.origin}/#invite=${token}`;
+    return `${getBaseUrl()}#invite=${token}`;
   }
 
   function copyInviteLink(token: string) {
@@ -123,6 +128,10 @@ export default function AdminInvite({ onClose }: AdminInviteProps) {
           {/* Invite form */}
           <form onSubmit={handleInvite} className="rounded-xl border border-slate-200 p-4">
             <h3 className="mb-3 text-sm font-bold text-slate-900">Invite a New Team Member</h3>
+            <div className="mb-3 flex items-start gap-2 rounded-lg bg-sky-50 px-3 py-2.5">
+              <Info className="mt-0.5 h-4 w-4 shrink-0 text-sky-500" />
+              <p className="text-xs text-sky-700">After creating an invite, the link is copied to your clipboard. You'll need to share it with the person yourself — invitations are not sent automatically by email.</p>
+            </div>
             <div className="space-y-3">
               <div>
                 <label className="mb-1.5 block text-xs font-medium text-slate-600">
@@ -161,7 +170,7 @@ export default function AdminInvite({ onClose }: AdminInviteProps) {
             {success && (
               <div className="mt-3 rounded-lg bg-emerald-50 px-3 py-2.5 text-xs text-emerald-700">
                 <p className="font-semibold">{success}</p>
-                <p className="mt-1">The invite link has been copied to your clipboard.</p>
+                <p className="mt-1">Share this link with them via email, text, or your preferred messaging app.</p>
               </div>
             )}
 
@@ -217,7 +226,7 @@ export default function AdminInvite({ onClose }: AdminInviteProps) {
                     )}
                     {p.role === 'sales' && p.profile_setup_complete && p.slug && (
                       <a
-                        href={`${window.location.origin}/?rep=${p.slug}`}
+                        href={`${getBaseUrl()}?rep=${p.slug}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
@@ -261,13 +270,19 @@ export default function AdminInvite({ onClose }: AdminInviteProps) {
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => copyInviteLink(invite.token)}
-                        className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                        className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
                         title="Copy invite link"
                       >
                         {copiedToken === invite.token ? (
-                          <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                          <>
+                            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                            Copied
+                          </>
                         ) : (
-                          <Copy className="h-4 w-4" />
+                          <>
+                            <Copy className="h-3.5 w-3.5" />
+                            Copy Link
+                          </>
                         )}
                       </button>
                       <button
