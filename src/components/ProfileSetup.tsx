@@ -5,9 +5,11 @@ import { useAuth } from '@/lib/auth';
 
 interface ProfileSetupProps {
   onComplete: () => void;
+  onCancel?: () => void;
+  isEditing?: boolean;
 }
 
-export default function ProfileSetup({ onComplete }: ProfileSetupProps) {
+export default function ProfileSetup({ onComplete, onCancel, isEditing }: ProfileSetupProps) {
   const { profile, refreshProfile } = useAuth();
   const [fullName, setFullName] = useState(profile?.full_name || '');
   const [title, setTitle] = useState(profile?.title || 'Sales & Leasing Consultant');
@@ -135,7 +137,7 @@ export default function ProfileSetup({ onComplete }: ProfileSetupProps) {
     <div className="min-h-screen bg-slate-100 py-8">
       <div className="mx-auto max-w-2xl px-4 sm:px-6">
         <div className="mb-8 text-center">
-          <h1 className="text-2xl font-bold text-slate-900">Set Up Your Profile</h1>
+          <h1 className="text-2xl font-bold text-slate-900">{isEditing ? 'Edit Your Profile' : 'Set Up Your Profile'}</h1>
           <p className="mt-2 text-sm text-slate-600">
             This information appears on your personal landing page that you share with customers.
           </p>
@@ -301,23 +303,34 @@ export default function ProfileSetup({ onComplete }: ProfileSetupProps) {
             </p>
           )}
 
-          <button
-            type="submit"
-            disabled={loading || !fullName.trim() || (isInitialSetup && !photoUrl)}
-            className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              <>
-                <Save className="h-4 w-4" />
-                Save & Continue
-              </>
+          <div className="mt-6 flex gap-3">
+            {isEditing && onCancel && (
+              <button
+                type="button"
+                onClick={onCancel}
+                className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-6 py-3.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+              >
+                Cancel
+              </button>
             )}
-          </button>
+            <button
+              type="submit"
+              disabled={loading || !fullName.trim() || (isInitialSetup && !photoUrl)}
+              className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-slate-900 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4" />
+                  {isEditing ? 'Save Changes' : 'Save & Continue'}
+                </>
+              )}
+            </button>
+          </div>
         </form>
       </div>
     </div>

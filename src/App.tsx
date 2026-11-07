@@ -90,7 +90,7 @@ function AppContent() {
         // If profile is still missing, show admin setup
       }
     }
-  }, [session, profile, loading, view, inviteToken, hasAdmin]);
+  }, [session, profile, loading, view, inviteToken, hasAdmin, isEditingProfile]);
 
   // Handle navigation from landing page "Staff Login" button
   function handleGoToFunnel() {
@@ -166,7 +166,12 @@ function AppContent() {
   if ((view === 'profile-setup' || (session && profile && !profile.profile_setup_complete)) && profile?.role !== 'admin') {
     return (
       <ProfileSetup
+        isEditing={isEditingProfile}
         onComplete={() => {
+          setIsEditingProfile(false);
+          setView('funnel');
+        }}
+        onCancel={() => {
           setIsEditingProfile(false);
           setView('funnel');
         }}
