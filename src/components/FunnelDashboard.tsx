@@ -189,13 +189,15 @@ export default function FunnelDashboard({ onGoToLanding, onEditProfile }: Funnel
                 <LinkIcon className="h-4 w-4" />
                 <span className="hidden sm:inline">My Link</span>
               </button>
-              <button
-                onClick={onEditProfile}
-                className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
-              >
-                <UserCog className="h-4 w-4" />
-                <span className="hidden sm:inline">Profile</span>
-              </button>
+              {!isAdmin && (
+                <button
+                  onClick={onEditProfile}
+                  className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+                >
+                  <UserCog className="h-4 w-4" />
+                  <span className="hidden sm:inline">Profile</span>
+                </button>
+              )}
               {isAdmin && (
                 <button
                   onClick={() => setShowTeamModal(true)}

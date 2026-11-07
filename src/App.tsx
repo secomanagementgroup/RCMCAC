@@ -131,12 +131,12 @@ function AppContent() {
     );
   }
 
-  // Admin bootstrap (one-time)
+  // Admin bootstrap (one-time) — goes straight to dashboard, no profile setup
   if (view === 'admin-setup' || (view === 'login' && hasAdmin === false)) {
     return (
       <AdminSetup
         onSuccess={() => {
-          setView('profile-setup');
+          setView('funnel');
         }}
       />
     );

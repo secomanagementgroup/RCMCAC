@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Loader2, User, Briefcase, Phone, MapPin, Building2, Save, Link as LinkIcon } from 'lucide-react';
+import { useState, useRef, useCallback } from 'react';
+import { Loader2, User, Briefcase, Phone, MapPin, Building2, Save, Link as LinkIcon, UploadCloud, ImageIcon, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 
@@ -18,9 +18,68 @@ export default function ProfileSetup({ onComplete }: ProfileSetupProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const siteOrigin = typeof window !== 'undefined' ? window.location.origin : '';
   const personalLink = profile ? `${siteOrigin}/?rep=${profile.slug}` : '';
+
+  const handleFile = useCallback(async (file: File) => {
+    if (!supabase || !profile) return;
+
+    if (!file.type.startsWith('image/')) {
+      setError('Please select an image file (JPG, PNG, or WebP).');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image must be under 5MB.');
+      return;
+    }
+
+    setError('');
+    setUploading(true);
+
+    const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+    const fileName = `${profile.id}/photo.${ext}`;
+
+    // Delete any existing photo first (in case the extension changed)
+    await supabase.storage.from('profile-photos').remove([`${profile.id}/photo.jpg`, `${profile.id}/photo.png`, `${profile.id}/photo.webp`, `${profile.id}/photo.gif`]);
+
+    const { error: uploadError } = await supabase.storage
+      .from('profile-photos')
+      .upload(fileName, file, { upsert: true });
+
+    if (uploadError) {
+      setError('Failed to upload photo. Please try again.');
+      setUploading(false);
+      return;
+    }
+
+    const { data: urlData } = supabase.storage
+      .from('profile-photos')
+      .getPublicUrl(fileName);
+
+    setPhotoUrl(urlData.publicUrl);
+    setUploading(false);
+  }, [profile, supabase]);
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer.files[0];
+    if (file) handleFile(file);
+  }
+
+  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) handleFile(file);
+  }
+
+  function removePhoto() {
+    setPhotoUrl('');
+  }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -107,6 +166,74 @@ export default function ProfileSetup({ onComplete }: ProfileSetupProps) {
 
         <form onSubmit={handleSave} className="rounded-2xl bg-white p-6 shadow-sm sm:p-8">
           <div className="space-y-5">
+            {/* Photo upload */}
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                Profile Photo
+              </label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+              {photoUrl ? (
+                <div className="relative inline-block">
+                  <img
+                    src={photoUrl}
+                    alt="Profile preview"
+                    className="h-32 w-32 rounded-xl object-cover ring-1 ring-slate-200"
+                  />
+                  <button
+                    type="button"
+                    onClick={removePhoto}
+                    className="absolute -right-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full bg-rose-500 text-white shadow-lg transition hover:bg-rose-600"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="mt-2 block text-xs font-medium text-slate-500 underline transition hover:text-slate-700"
+                  >
+                    Change photo
+                  </button>
+                </div>
+              ) : (
+                <div
+                  onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                  onDragLeave={() => setDragOver(false)}
+                  onDrop={handleDrop}
+                  onClick={() => fileInputRef.current?.click()}
+                  className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-10 transition ${
+                    dragOver
+                      ? 'border-slate-900 bg-slate-50'
+                      : 'border-slate-300 hover:border-slate-400 hover:bg-slate-50'
+                  }`}
+                >
+                  {uploading ? (
+                    <>
+                      <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
+                      <p className="mt-3 text-sm text-slate-500">Uploading...</p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
+                        <UploadCloud className="h-6 w-6 text-slate-400" />
+                      </div>
+                      <p className="mt-3 text-sm font-medium text-slate-700">
+                        Drag & drop your photo here
+                      </p>
+                      <p className="mt-1 text-xs text-slate-400">
+                        or click to browse — JPG, PNG, or WebP (max 5MB)
+                      </p>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+
             <Field
               icon={<User className="h-4 w-4" />}
               label="Full Name"
@@ -128,13 +255,6 @@ export default function ProfileSetup({ onComplete }: ProfileSetupProps) {
               value={phone}
               onChange={setPhone}
               placeholder="(626) 498-4820"
-            />
-            <Field
-              icon={<LinkIcon className="h-4 w-4" />}
-              label="Photo URL"
-              value={photoUrl}
-              onChange={setPhotoUrl}
-              placeholder="Link to your headshot photo"
             />
             <Field
               icon={<Building2 className="h-4 w-4" />}
@@ -189,6 +309,8 @@ export default function ProfileSetup({ onComplete }: ProfileSetupProps) {
   );
 }
 
+void ImageIcon;
+
 function Field({
   icon,
   label,
@@ -226,5 +348,3 @@ function Field({
     </div>
   );
 }
-
-
