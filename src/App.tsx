@@ -27,6 +27,7 @@ function AppContent() {
   const [repSlug, setRepSlug] = useState<string | undefined>(undefined);
   const [inviteToken, setInviteToken] = useState<string | null>(null);
   const [hasAdmin, setHasAdmin] = useState<boolean | null>(null);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
 
   // Check URL on mount for rep slug or invite token
   useEffect(() => {
@@ -78,7 +79,7 @@ function AppContent() {
         }
       } else if (!profile.profile_setup_complete && view !== 'profile-setup') {
         setView('profile-setup');
-      } else if (profile.profile_setup_complete && (view === 'login' || view === 'admin-setup' || view === 'accept-invite' || view === 'profile-setup')) {
+      } else if (profile.profile_setup_complete && (view === 'login' || view === 'admin-setup' || view === 'accept-invite' || (view === 'profile-setup' && !isEditingProfile))) {
         setView('funnel');
       }
     } else if (session && !profile && view !== 'profile-setup' && view !== 'accept-invite') {
@@ -165,7 +166,10 @@ function AppContent() {
   if ((view === 'profile-setup' || (session && profile && !profile.profile_setup_complete)) && profile?.role !== 'admin') {
     return (
       <ProfileSetup
-        onComplete={() => setView('funnel')}
+        onComplete={() => {
+          setIsEditingProfile(false);
+          setView('funnel');
+        }}
       />
     );
   }
@@ -193,7 +197,10 @@ function AppContent() {
     }
     return (
       <FunnelDashboard
-        onEditProfile={() => setView('profile-setup')}
+        onEditProfile={() => {
+          setIsEditingProfile(true);
+          setView('profile-setup');
+        }}
       />
     );
   }
