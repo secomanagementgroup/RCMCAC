@@ -23,9 +23,9 @@ interface LandingPageProps {
 const FALLBACK_PROFILE: Profile = {
   id: '',
   email: '',
-  full_name: 'Richard Chiang',
+  full_name: '',
   title: 'Sales & Leasing Consultant',
-  slug: 'richard-chiang',
+  slug: '',
   photo_url: 'images/5145370146758135874_121.jpg',
   phone: '(626) 498-4820',
   dealership_name: 'Mark Christopher Auto Center',
@@ -42,7 +42,12 @@ export default function LandingPage({ onGoToFunnel, repSlug }: LandingPageProps)
 
   useEffect(() => {
     async function loadProfile() {
-      const slug = repSlug || 'richard-chiang';
+      const slug = repSlug || '';
+      if (!slug) {
+        setProfile(FALLBACK_PROFILE);
+        setLoading(false);
+        return;
+      }
       if (!supabase) {
         setProfile(FALLBACK_PROFILE);
         setLoading(false);
@@ -58,17 +63,7 @@ export default function LandingPage({ onGoToFunnel, repSlug }: LandingPageProps)
       if (data) {
         setProfile(data as Profile);
       } else {
-        // Fall back to richard-chiang if the slug doesn't match any profile
-        if (slug !== 'richard-chiang') {
-          const { data: fallback } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('slug', 'richard-chiang')
-            .maybeSingle();
-          setProfile((fallback as Profile) || FALLBACK_PROFILE);
-        } else {
-          setProfile(FALLBACK_PROFILE);
-        }
+        setProfile(FALLBACK_PROFILE);
       }
       setLoading(false);
     }

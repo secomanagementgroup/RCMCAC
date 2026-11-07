@@ -190,7 +190,7 @@ export default function AcceptInvite({ token, onSuccess }: AcceptInviteProps) {
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   required
-                  placeholder="Richard Chiang"
+                  placeholder="Your full name"
                   className="w-full rounded-xl border border-slate-300 py-3 pl-10 pr-4 text-sm text-slate-900 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
                 />
               </div>

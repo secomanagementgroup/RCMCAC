@@ -22,8 +22,13 @@ export default function ProfileSetup({ onComplete }: ProfileSetupProps) {
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const siteOrigin = typeof window !== 'undefined' ? window.location.origin : '';
-  const personalLink = profile ? `${siteOrigin}/?rep=${profile.slug}` : '';
+  const baseUrl = (() => {
+    if (typeof window === 'undefined') return '';
+    const path = window.location.pathname.replace(/index\.html$/, '');
+    const normalized = path.endsWith('/') ? path : path + '/';
+    return window.location.origin + normalized;
+  })();
+  const personalLink = profile ? `${baseUrl}?rep=${profile.slug}` : '';
 
   const handleFile = useCallback(async (file: File) => {
     if (!supabase || !profile) return;
@@ -107,7 +112,7 @@ export default function ProfileSetup({ onComplete }: ProfileSetupProps) {
       .eq('id', profile.id);
 
     if (updateError) {
-      setError('Failed to save profile. Please try again.');
+      setError(`Failed to save profile: ${updateError.message}`);
       setLoading(false);
       return;
     }
@@ -240,7 +245,7 @@ export default function ProfileSetup({ onComplete }: ProfileSetupProps) {
               value={fullName}
               onChange={setFullName}
               required
-              placeholder="Richard Chiang"
+              placeholder="Your full name"
             />
             <Field
               icon={<Briefcase className="h-4 w-4" />}
