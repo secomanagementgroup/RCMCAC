@@ -233,6 +233,9 @@ export default function ProfileSetup({ onComplete }: ProfileSetupProps) {
                       <p className="mt-1 text-xs text-slate-400">
                         or click to browse — JPG, PNG, or WebP (max 5MB)
                       </p>
+                      <p className="mt-2 text-xs font-medium text-amber-600">
+                        Your landing page will show your initials instead of a photo until you upload one.
+                      </p>
                     </>
                   )}
                 </div>

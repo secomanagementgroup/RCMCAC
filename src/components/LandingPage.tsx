@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   Sparkles,
   Loader2,
+  User,
 } from 'lucide-react';
 import LeadForm from './LeadForm';
 import { supabase } from '@/lib/supabase';
@@ -26,8 +27,8 @@ const FALLBACK_PROFILE: Profile = {
   full_name: '',
   title: 'Sales & Leasing Consultant',
   slug: '',
-  photo_url: 'images/5145370146758135874_121.jpg',
-  phone: '(626) 498-4820',
+  photo_url: null,
+  phone: '',
   dealership_name: 'Mark Christopher Auto Center',
   dealership_address: '2131 Convention Center Way\nOntario, CA 91764',
   role: 'sales',
@@ -35,6 +36,13 @@ const FALLBACK_PROFILE: Profile = {
   created_at: '',
   updated_at: '',
 };
+
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
 
 export default function LandingPage({ onGoToFunnel, repSlug }: LandingPageProps) {
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -80,7 +88,9 @@ export default function LandingPage({ onGoToFunnel, repSlug }: LandingPageProps)
   }
 
   const p = profile || FALLBACK_PROFILE;
-  const photoSrc = p.photo_url || 'images/5145370146758135874_121.jpg';
+  const hasPhoto = Boolean(p.photo_url);
+  const photoSrc = p.photo_url || '';
+  const initials = getInitials(p.full_name);
   const addressLines = (p.dealership_address || '').split('\n').filter(Boolean);
 
   return (
@@ -112,11 +122,23 @@ export default function LandingPage({ onGoToFunnel, repSlug }: LandingPageProps)
       <main>
         <section className="relative isolate overflow-hidden border-b border-[#b38318]/30 bg-[#111111] text-white">
           <div className="absolute inset-y-0 right-0 hidden w-[58%] sm:block">
-            <img
-              src={photoSrc}
-              alt={`${p.full_name}, ${p.title || 'sales consultant'}`}
-              className="h-full w-full object-cover object-top"
-            />
+            {hasPhoto ? (
+              <img
+                src={photoSrc}
+                alt={`${p.full_name}, ${p.title || 'sales consultant'}`}
+                className="h-full w-full object-cover object-top"
+              />
+            ) : (
+              <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-br from-[#2a2519] to-[#111111]">
+                <div className="flex h-40 w-40 items-center justify-center rounded-full bg-[#b38318]/20 ring-4 ring-[#b38318]/30">
+                  {initials ? (
+                    <span className="text-5xl font-black tracking-wide text-[#e0bb54]">{initials}</span>
+                  ) : (
+                    <User className="h-16 w-16 text-[#e0bb54]/60" />
+                  )}
+                </div>
+              </div>
+            )}
             <div className="absolute inset-0 bg-gradient-to-r from-[#111111] via-[#111111]/75 to-transparent" />
             <div className="absolute inset-0 bg-gradient-to-t from-[#111111]/60 via-transparent to-[#111111]/10" />
           </div>
@@ -158,11 +180,23 @@ export default function LandingPage({ onGoToFunnel, repSlug }: LandingPageProps)
               </div>
             </div>
             <div className="relative mt-10 h-[360px] w-full sm:hidden">
-              <img
-                src={photoSrc}
-                alt={`${p.full_name}, ${p.title || 'sales consultant'}`}
-                className="h-full w-full object-cover object-top"
-              />
+              {hasPhoto ? (
+                <img
+                  src={photoSrc}
+                  alt={`${p.full_name}, ${p.title || 'sales consultant'}`}
+                  className="h-full w-full object-cover object-top"
+                />
+              ) : (
+                <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-br from-[#2a2519] to-[#111111]">
+                  <div className="flex h-32 w-32 items-center justify-center rounded-full bg-[#b38318]/20 ring-4 ring-[#b38318]/30">
+                    {initials ? (
+                      <span className="text-4xl font-black tracking-wide text-[#e0bb54]">{initials}</span>
+                    ) : (
+                      <User className="h-12 w-12 text-[#e0bb54]/60" />
+                    )}
+                  </div>
+                </div>
+              )}
               <div className="absolute inset-0 bg-gradient-to-t from-[#111111] via-transparent to-[#111111]" />
             </div>
           </div>
