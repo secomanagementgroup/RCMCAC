@@ -28,7 +28,11 @@ import {
 
 type FormState = 'idle' | 'submitting' | 'success' | 'error';
 
-export default function LeadForm() {
+interface LeadFormProps {
+  repSlug?: string;
+}
+
+export default function LeadForm({ repSlug }: LeadFormProps) {
   const [leadType, setLeadType] = useState<LeadType>('buying');
   const [formState, setFormState] = useState<FormState>('idle');
   const [errorMsg, setErrorMsg] = useState('');
@@ -86,6 +90,10 @@ export default function LeadForm() {
       timeframe: timeframe || null,
       notes: notes.trim() || null,
     };
+
+    if (repSlug) {
+      payload.rep_slug = repSlug;
+    }
 
     if (leadType === 'buying') {
       payload.gm_brand = (gmBrand || null) as LeadInsert['gm_brand'];

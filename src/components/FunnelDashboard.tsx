@@ -18,8 +18,15 @@ import {
   Users,
   Trophy,
   Activity,
+  LogOut,
+  Link as LinkIcon,
+  Copy,
+  CheckCircle2,
+  UserCog,
+  QrCode,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/lib/auth';
 import {
   Lead,
   LeadStatus,
@@ -27,20 +34,31 @@ import {
   GmBrand,
   FUNNEL_STAGES,
   GM_BRANDS,
+  Profile,
 } from '@/lib/types';
+import AdminInvite from './AdminInvite';
 
 interface FunnelDashboardProps {
   onGoToLanding: () => void;
+  onEditProfile: () => void;
 }
 
-export default function FunnelDashboard({ onGoToLanding }: FunnelDashboardProps) {
+export default function FunnelDashboard({ onGoToLanding, onEditProfile }: FunnelDashboardProps) {
+  const { profile, signOut } = useAuth();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState<LeadType | 'all'>('all');
   const [filterBrand, setFilterBrand] = useState<GmBrand | 'all'>('all');
+  const [filterRep, setFilterRep] = useState<string>('all');
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [allProfiles, setAllProfiles] = useState<Profile[]>([]);
+  const [showTeamModal, setShowTeamModal] = useState(false);
+  const [showLinkModal, setShowLinkModal] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const isAdmin = profile?.role === 'admin';
 
   const fetchLeads = useCallback(async () => {
     setLoading(true);
@@ -65,9 +83,19 @@ export default function FunnelDashboard({ onGoToLanding }: FunnelDashboardProps)
     setLoading(false);
   }, []);
 
+  const fetchProfiles = useCallback(async () => {
+    if (!supabase || !isAdmin) return;
+    const { data } = await supabase
+      .from('profiles')
+      .select('*')
+      .order('full_name', { ascending: true });
+    setAllProfiles((data as Profile[]) || []);
+  }, [isAdmin]);
+
   useEffect(() => {
     fetchLeads();
-  }, [fetchLeads]);
+    fetchProfiles();
+  }, [fetchLeads, fetchProfiles]);
 
   async function updateLeadStatus(leadId: string, status: LeadStatus) {
     if (!supabase) {
@@ -91,7 +119,14 @@ export default function FunnelDashboard({ onGoToLanding }: FunnelDashboardProps)
     }
   }
 
-  const filtered = leads.filter((lead) => {
+  // Filter leads: admin sees all (optionally filtered by rep), sales sees only their own
+  const scopedLeads = isAdmin
+    ? filterRep === 'all'
+      ? leads
+      : leads.filter((l) => l.rep_slug === filterRep)
+    : leads.filter((l) => l.rep_slug === profile?.slug);
+
+  const filtered = scopedLeads.filter((lead) => {
     const matchesSearch =
       !search ||
       lead.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -107,13 +142,25 @@ export default function FunnelDashboard({ onGoToLanding }: FunnelDashboardProps)
   });
 
   const stats = {
-    total: leads.length,
-    new: leads.filter((l) => l.status === 'new').length,
-    qualified: leads.filter(
+    total: scopedLeads.length,
+    new: scopedLeads.filter((l) => l.status === 'new').length,
+    qualified: scopedLeads.filter(
       (l) => l.status === 'qualified' || l.status === 'appointment'
     ).length,
-    won: leads.filter((l) => l.status === 'won').length,
+    won: scopedLeads.filter((l) => l.status === 'won').length,
   };
+
+  const personalLink = profile
+    ? `${window.location.origin}/?rep=${profile.slug}`
+    : '';
+
+  function copyPersonalLink() {
+    if (personalLink) {
+      navigator.clipboard.writeText(personalLink);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-slate-100">
@@ -131,15 +178,55 @@ export default function FunnelDashboard({ onGoToLanding }: FunnelDashboardProps)
               </button>
               <div className="h-6 w-px bg-slate-200" />
               <h1 className="text-base font-bold text-slate-900 sm:text-lg">
-                Lead Funnel Dashboard
+                {isAdmin ? 'Team Lead Dashboard' : 'My Lead Dashboard'}
               </h1>
             </div>
-            <button
-              onClick={fetchLeads}
-              className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
-            >
-              Refresh
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowLinkModal(true)}
+                className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+              >
+                <LinkIcon className="h-4 w-4" />
+                <span className="hidden sm:inline">My Link</span>
+              </button>
+              <button
+                onClick={onEditProfile}
+                className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+              >
+                <UserCog className="h-4 w-4" />
+                <span className="hidden sm:inline">Profile</span>
+              </button>
+              {isAdmin && (
+                <button
+                  onClick={() => setShowTeamModal(true)}
+                  className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+                >
+                  <Users className="h-4 w-4" />
+                  <span className="hidden sm:inline">Team</span>
+                </button>
+              )}
+              <button
+                onClick={fetchLeads}
+                className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+              >
+                Refresh
+              </button>
+              <button
+                onClick={() => signOut()}
+                className="flex items-center gap-1.5 rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                title="Sign out"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+          {/* User badge */}
+          <div className="mt-2 flex items-center gap-2 text-xs text-slate-500">
+            <span className="font-medium">{profile?.full_name}</span>
+            <span className="text-slate-300">·</span>
+            <span className={`font-semibold ${isAdmin ? 'text-amber-600' : 'text-slate-500'}`}>
+              {isAdmin ? 'Administrator' : 'Salesperson'}
+            </span>
           </div>
         </div>
       </header>
@@ -185,6 +272,23 @@ export default function FunnelDashboard({ onGoToLanding }: FunnelDashboardProps)
             />
           </div>
           <div className="flex gap-3">
+            {isAdmin && allProfiles.length > 0 && (
+              <div className="relative">
+                <Users className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <select
+                  value={filterRep}
+                  onChange={(e) => setFilterRep(e.target.value)}
+                  className="appearance-none rounded-lg border border-slate-300 bg-white py-2.5 pl-9 pr-8 text-sm outline-none focus:border-slate-900"
+                >
+                  <option value="all">All Reps</option>
+                  {allProfiles.map((p) => (
+                    <option key={p.id} value={p.slug}>
+                      {p.full_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div className="relative">
               <Filter className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <select
@@ -230,6 +334,8 @@ export default function FunnelDashboard({ onGoToLanding }: FunnelDashboardProps)
             leads={filtered}
             onSelectLead={setSelectedLead}
             onUpdateStatus={updateLeadStatus}
+            showRep={isAdmin && filterRep === 'all'}
+            profiles={allProfiles}
           />
         )}
       </div>
@@ -241,6 +347,87 @@ export default function FunnelDashboard({ onGoToLanding }: FunnelDashboardProps)
           onUpdateStatus={updateLeadStatus}
         />
       )}
+
+      {showTeamModal && (
+        <AdminInvite onClose={() => { setShowTeamModal(false); fetchLeads(); fetchProfiles(); }} />
+      )}
+
+      {showLinkModal && (
+        <MyLinkModal
+          link={personalLink}
+          copied={copied}
+          onCopy={copyPersonalLink}
+          onClose={() => setShowLinkModal(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+function MyLinkModal({
+  link,
+  copied,
+  onCopy,
+  onClose,
+}: {
+  link: string;
+  copied: boolean;
+  onCopy: () => void;
+  onClose: () => void;
+}) {
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(link)}`;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-4 flex items-center justify-center gap-2">
+          <QrCode className="h-5 w-5 text-slate-700" />
+          <h2 className="text-lg font-bold text-slate-900">Your Customer Link</h2>
+        </div>
+
+        <div className="mx-auto mb-4 rounded-xl border border-slate-200 bg-white p-3">
+          <img src={qrUrl} alt="QR code for your link" className="mx-auto h-48 w-48" />
+        </div>
+
+        <p className="mb-3 text-xs text-slate-500">
+          Scan this QR code or share the link below. Leads submitted from this page appear in your dashboard.
+        </p>
+
+        <div className="flex items-center gap-2">
+          <code className="flex-1 truncate rounded-lg bg-slate-100 px-3 py-2 text-xs text-slate-700">
+            {link}
+          </code>
+          <button
+            onClick={onCopy}
+            className="flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white transition hover:bg-slate-800"
+          >
+            {copied ? (
+              <>
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                Copied
+              </>
+            ) : (
+              <>
+                <Copy className="h-3.5 w-3.5" />
+                Copy
+              </>
+            )}
+          </button>
+        </div>
+
+        <button
+          onClick={onClose}
+          className="mt-4 w-full rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+        >
+          Close
+        </button>
+      </div>
     </div>
   );
 }
@@ -249,10 +436,14 @@ function FunnelBoard({
   leads,
   onSelectLead,
   onUpdateStatus,
+  showRep,
+  profiles,
 }: {
   leads: Lead[];
   onSelectLead: (lead: Lead) => void;
   onUpdateStatus: (id: string, status: LeadStatus) => void;
+  showRep: boolean;
+  profiles: Profile[];
 }) {
   if (leads.length === 0) {
     return (
@@ -260,10 +451,16 @@ function FunnelBoard({
         <Users className="h-12 w-12 text-slate-300" />
         <p className="mt-4 text-lg font-semibold text-slate-700">No leads yet</p>
         <p className="mt-1 text-sm text-slate-500">
-          Leads submitted from the landing page will appear here.
+          Leads submitted from your landing page will appear here.
         </p>
       </div>
     );
+  }
+
+  function repName(slug: string | null): string {
+    if (!slug) return 'Unassigned';
+    const p = profiles.find((pr) => pr.slug === slug);
+    return p ? p.full_name : slug;
   }
 
   return (
@@ -288,6 +485,8 @@ function FunnelBoard({
                   lead={lead}
                   onClick={() => onSelectLead(lead)}
                   onStatusChange={(s) => onUpdateStatus(lead.id, s)}
+                  showRep={showRep}
+                  repName={repName(lead.rep_slug)}
                 />
               ))}
               {stageLeads.length === 0 && (
@@ -305,10 +504,14 @@ function LeadCard({
   lead,
   onClick,
   onStatusChange,
+  showRep,
+  repName,
 }: {
   lead: Lead;
   onClick: () => void;
   onStatusChange: (status: LeadStatus) => void;
+  showRep: boolean;
+  repName: string;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const typeColor =
@@ -327,6 +530,9 @@ function LeadCard({
         >
           {lead.lead_type === 'buying' ? 'Buying' : 'Selling'}
         </span>
+        {showRep && (
+          <p className="mt-1 text-xs font-medium text-slate-400">{repName}</p>
+        )}
         <div className="mt-2 space-y-1">
           {lead.lead_type === 'buying' ? (
             <>
@@ -483,6 +689,12 @@ function LeadDetailModal({
                 )}
                 {lead.budget_range && (
                   <DetailRow icon={<DollarSign className="h-4 w-4" />} label="Budget" value={lead.budget_range} />
+                )}
+                {lead.payment_goal && (
+                  <DetailRow icon={<DollarSign className="h-4 w-4" />} label="Payment Goal" value={lead.payment_goal} />
+                )}
+                {lead.down_payment && (
+                  <DetailRow icon={<DollarSign className="h-4 w-4" />} label="Down Payment" value={lead.down_payment} />
                 )}
                 {lead.timeframe && (
                   <DetailRow icon={<Calendar className="h-4 w-4" />} label="Timeframe" value={lead.timeframe} />

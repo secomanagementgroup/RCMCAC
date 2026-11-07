@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import {
   Award,
   Car,
@@ -8,14 +9,85 @@ import {
   Phone,
   ShieldCheck,
   Sparkles,
+  Loader2,
 } from 'lucide-react';
 import LeadForm from './LeadForm';
+import { supabase } from '@/lib/supabase';
+import { Profile } from '@/lib/types';
 
 interface LandingPageProps {
   onGoToFunnel: () => void;
+  repSlug?: string;
 }
 
-export default function LandingPage({ onGoToFunnel }: LandingPageProps) {
+const FALLBACK_PROFILE: Profile = {
+  id: '',
+  email: '',
+  full_name: 'Richard Chiang',
+  title: 'Sales & Leasing Consultant',
+  slug: 'richard-chiang',
+  photo_url: 'images/5145370146758135874_121.jpg',
+  phone: '(626) 498-4820',
+  dealership_name: 'Mark Christopher Auto Center',
+  dealership_address: '2131 Convention Center Way\nOntario, CA 91764',
+  role: 'sales',
+  profile_setup_complete: false,
+  created_at: '',
+  updated_at: '',
+};
+
+export default function LandingPage({ onGoToFunnel, repSlug }: LandingPageProps) {
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadProfile() {
+      const slug = repSlug || 'richard-chiang';
+      if (!supabase) {
+        setProfile(FALLBACK_PROFILE);
+        setLoading(false);
+        return;
+      }
+
+      const { data } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('slug', slug)
+        .maybeSingle();
+
+      if (data) {
+        setProfile(data as Profile);
+      } else {
+        // Fall back to richard-chiang if the slug doesn't match any profile
+        if (slug !== 'richard-chiang') {
+          const { data: fallback } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('slug', 'richard-chiang')
+            .maybeSingle();
+          setProfile((fallback as Profile) || FALLBACK_PROFILE);
+        } else {
+          setProfile(FALLBACK_PROFILE);
+        }
+      }
+      setLoading(false);
+    }
+
+    loadProfile();
+  }, [repSlug]);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#f6f5f2]">
+        <Loader2 className="h-8 w-8 animate-spin text-[#b38318]" />
+      </div>
+    );
+  }
+
+  const p = profile || FALLBACK_PROFILE;
+  const photoSrc = p.photo_url || 'images/5145370146758135874_121.jpg';
+  const addressLines = (p.dealership_address || '').split('\n').filter(Boolean);
+
   return (
     <div className="min-h-screen bg-[#f6f5f2] text-[#111111]">
       <header className="border-b border-black/10 bg-white">
@@ -26,10 +98,10 @@ export default function LandingPage({ onGoToFunnel }: LandingPageProps) {
             </div>
             <div>
               <p className="text-sm font-extrabold uppercase tracking-[0.14em] text-[#111111]">
-                Richard Chiang
+                {p.full_name}
               </p>
               <p className="text-xs font-medium uppercase tracking-[0.16em] text-[#7a5a13]">
-                Sales &amp; Leasing Consultant
+                {p.title}
               </p>
             </div>
           </div>
@@ -37,7 +109,7 @@ export default function LandingPage({ onGoToFunnel }: LandingPageProps) {
             onClick={onGoToFunnel}
             className="rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wide text-[#6b6b6b] transition hover:bg-[#f3f0e7] hover:text-[#111111] sm:px-4 sm:text-sm"
           >
-            Lead Dashboard
+            Staff Login
           </button>
         </div>
       </header>
@@ -46,8 +118,8 @@ export default function LandingPage({ onGoToFunnel }: LandingPageProps) {
         <section className="relative isolate overflow-hidden border-b border-[#b38318]/30 bg-[#111111] text-white">
           <div className="absolute inset-y-0 right-0 hidden w-[58%] sm:block">
             <img
-              src="images/5145370146758135874_121.jpg"
-              alt="Richard Chiang, sales and leasing consultant"
+              src={photoSrc}
+              alt={`${p.full_name}, ${p.title || 'sales consultant'}`}
               className="h-full w-full object-cover object-top"
             />
             <div className="absolute inset-0 bg-gradient-to-r from-[#111111] via-[#111111]/75 to-transparent" />
@@ -69,7 +141,7 @@ export default function LandingPage({ onGoToFunnel }: LandingPageProps) {
                 Let&apos;s get you on the road.
               </h1>
               <p className="mt-5 max-w-xl text-base leading-7 text-[#e4e4e4] sm:text-lg">
-                Looking for your next GM vehicle or ready to sell your current one? Share a few details and I&apos;ll help you take the next step.
+                Looking for your next GM vehicle or ready to sell your current one? Share a few details and {p.full_name.split(' ')[0]}&apos;ll help you take the next step.
               </p>
               <div className="mt-7 flex flex-wrap gap-3 text-sm font-semibold text-[#f4f1e8]">
                 <span className="inline-flex items-center gap-2 rounded-full border border-[#d8c28a]/70 bg-[#2a2519]/90 px-4 py-2 backdrop-blur-sm">
@@ -92,8 +164,8 @@ export default function LandingPage({ onGoToFunnel }: LandingPageProps) {
             </div>
             <div className="relative mt-10 h-[360px] w-full sm:hidden">
               <img
-                src="images/5145370146758135874_121.jpg"
-                alt="Richard Chiang, sales and leasing consultant"
+                src={photoSrc}
+                alt={`${p.full_name}, ${p.title || 'sales consultant'}`}
                 className="h-full w-full object-cover object-top"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#111111] via-transparent to-[#111111]" />
@@ -106,13 +178,13 @@ export default function LandingPage({ onGoToFunnel }: LandingPageProps) {
             <div className="mb-7 text-center">
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#8a6617]">Start here</p>
               <h2 className="mt-2 text-3xl font-black uppercase tracking-tight text-[#111111] sm:text-4xl">
-                How can I help?
+                How can {p.full_name.split(' ')[0]} help?
               </h2>
               <p className="mt-3 text-sm leading-6 text-[#666666] sm:text-base">
-                Tell me whether you&apos;re buying or selling, and I&apos;ll be in touch within one business day.
+                Tell us whether you&apos;re buying or selling, and {p.full_name.split(' ')[0]}&apos;ll be in touch within one business day.
               </p>
             </div>
-            <LeadForm />
+            <LeadForm repSlug={p.slug} />
           </div>
         </section>
 
@@ -143,19 +215,25 @@ export default function LandingPage({ onGoToFunnel }: LandingPageProps) {
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
             <div>
-              <p className="text-sm font-extrabold uppercase tracking-[0.14em] text-[#111111]">Richard Chiang</p>
-              <p className="mt-2 text-sm text-[#666666]">Sales &amp; Leasing Consultant</p>
+              <p className="text-sm font-extrabold uppercase tracking-[0.14em] text-[#111111]">{p.full_name}</p>
+              <p className="mt-2 text-sm text-[#666666]">{p.title}</p>
             </div>
             <div className="space-y-3 text-sm text-[#555555]">
-              <p className="flex items-center gap-3"><Phone className="h-4 w-4 text-[#b38318]" />(626) 498-4820</p>
-              <p className="flex items-center gap-3"><Mail className="h-4 w-4 text-[#b38318]" />Rchiang@markchristopher.com</p>
+              {p.phone && (
+                <p className="flex items-center gap-3"><Phone className="h-4 w-4 text-[#b38318]" />{p.phone}</p>
+              )}
+              {p.email && (
+                <p className="flex items-center gap-3"><Mail className="h-4 w-4 text-[#b38318]" />{p.email}</p>
+              )}
             </div>
             <div className="space-y-3 text-sm text-[#555555]">
-              <p className="flex items-start gap-3"><MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#b38318]" />2131 Convention Center Way<br />Ontario, CA 91764</p>
+              {addressLines.length > 0 && (
+                <p className="flex items-start gap-3"><MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#b38318]" />{addressLines.map((line, i) => <span key={i} className="block">{line}</span>)}</p>
+              )}
             </div>
           </div>
           <div className="mt-8 border-t border-black/10 pt-5 text-xs text-[#888888]">
-            Mark Christopher Auto Center · Chevrolet · Buick · GMC · Cadillac
+            {p.dealership_name || 'Mark Christopher Auto Center'} · Chevrolet · Buick · GMC · Cadillac
           </div>
         </div>
       </footer>

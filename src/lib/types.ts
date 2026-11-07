@@ -10,6 +10,46 @@ export type LeadStatus =
 
 export type GmBrand = 'Chevrolet' | 'Buick' | 'GMC' | 'Cadillac';
 
+export type UserRole = 'admin' | 'sales';
+
+export interface Profile {
+  id: string;
+  email: string;
+  full_name: string;
+  title: string | null;
+  slug: string;
+  photo_url: string | null;
+  phone: string | null;
+  dealership_name: string | null;
+  dealership_address: string | null;
+  role: UserRole;
+  profile_setup_complete: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProfileUpdate {
+  full_name?: string;
+  title?: string | null;
+  slug?: string;
+  photo_url?: string | null;
+  phone?: string | null;
+  dealership_name?: string | null;
+  dealership_address?: string | null;
+  profile_setup_complete?: boolean;
+}
+
+export interface Invite {
+  id: string;
+  email: string;
+  token: string;
+  role: UserRole;
+  invited_by: string | null;
+  accepted_at: string | null;
+  expires_at: string;
+  created_at: string;
+}
+
 export interface Lead {
   id: string;
   lead_type: LeadType;
@@ -31,6 +71,8 @@ export interface Lead {
   asking_price: number | null;
   vehicle_vin: string | null;
   notes: string | null;
+  rep_slug: string | null;
+  user_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -54,6 +96,7 @@ export interface LeadInsert {
   asking_price?: number | null;
   vehicle_vin?: string | null;
   notes?: string | null;
+  rep_slug?: string | null;
 }
 
 export const GM_BRANDS: GmBrand[] = ['Chevrolet', 'Buick', 'GMC', 'Cadillac'];
