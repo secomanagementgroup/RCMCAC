@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Loader2, Mail, Send, Trash2, Clock, CheckCircle2, X, UserPlus, Copy } from 'lucide-react';
+import { Loader2, Mail, Send, Trash2, Clock, CheckCircle2, X, UserPlus, Copy, ExternalLink } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { Invite, Profile } from '@/lib/types';
 
@@ -214,6 +214,18 @@ export default function AdminInvite({ onClose }: AdminInviteProps) {
                       <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                     ) : (
                       <Clock className="h-4 w-4 text-slate-300" />
+                    )}
+                    {p.role === 'sales' && p.profile_setup_complete && p.slug && (
+                      <a
+                        href={`${window.location.origin}/?rep=${p.slug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+                        title="View this rep's landing page"
+                      >
+                        <ExternalLink className="h-3.5 w-3.5" />
+                        View Page
+                      </a>
                     )}
                   </div>
                 </div>
