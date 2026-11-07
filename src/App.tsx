@@ -68,7 +68,12 @@ function AppContent() {
 
     if (session && profile) {
       // Logged in with profile
-      if (!profile.profile_setup_complete && view !== 'profile-setup') {
+      if (profile.role === 'admin') {
+        // Admins always go to dashboard — never profile setup
+        if (view === 'login' || view === 'admin-setup' || view === 'accept-invite' || view === 'profile-setup') {
+          setView('funnel');
+        }
+      } else if (!profile.profile_setup_complete && view !== 'profile-setup') {
         setView('profile-setup');
       } else if (profile.profile_setup_complete && (view === 'login' || view === 'admin-setup' || view === 'accept-invite' || view === 'profile-setup')) {
         setView('funnel');
@@ -138,12 +143,13 @@ function AppContent() {
         onSuccess={() => {
           setView('funnel');
         }}
+        onBack={() => setView('landing')}
       />
     );
   }
 
-  // Profile setup
-  if (view === 'profile-setup' || (session && profile && !profile.profile_setup_complete)) {
+  // Profile setup — only for non-admin (sales reps)
+  if ((view === 'profile-setup' || (session && profile && !profile.profile_setup_complete)) && profile?.role !== 'admin') {
     return (
       <ProfileSetup
         onComplete={() => setView('funnel')}

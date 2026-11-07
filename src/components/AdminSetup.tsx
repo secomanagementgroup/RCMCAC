@@ -1,17 +1,21 @@
 import { useState } from 'react';
-import { Loader2, ShieldCheck, UserPlus } from 'lucide-react';
+import { Loader2, ShieldCheck, UserPlus, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 interface AdminSetupProps {
   onSuccess: () => void;
+  onBack: () => void;
 }
 
 /**
  * One-time admin bootstrap screen. Shows only when no admin profile exists yet.
  * The user sets their email + password, which creates an auth account and an
  * admin profile via the complete_signup SECURITY DEFINER function.
+ *
+ * If the auth account already exists (from a previous half-finished attempt),
+ * the app signs in with the provided credentials and then completes the profile.
  */
-export default function AdminSetup({ onSuccess }: AdminSetupProps) {
+export default function AdminSetup({ onSuccess, onBack }: AdminSetupProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -44,19 +48,39 @@ export default function AdminSetup({ onSuccess }: AdminSetupProps) {
       return;
     }
 
-    // Create the auth account (email confirmation is OFF)
+    // Try to create the auth account
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email: email.trim(),
       password,
     });
 
+    let userId: string | undefined;
+
     if (signUpError) {
-      setError(signUpError.message || 'Failed to create admin account.');
-      setLoading(false);
-      return;
+      // If the account already exists, try signing in instead (recovery from
+      // a half-finished previous attempt where the auth user was created but
+      // the profile wasn't)
+      if (signUpError.message.includes('already') || signUpError.message.includes('registered') || signUpError.message.includes('been taken')) {
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password,
+        });
+        if (signInError) {
+          setError('An account with this email already exists. If this is your email, please sign in with your previous password, or use a different email address.');
+          setLoading(false);
+          return;
+        }
+        userId = signInData.user?.id;
+      } else {
+        setError(signUpError.message || 'Failed to create admin account.');
+        setLoading(false);
+        return;
+      }
+    } else {
+      userId = signUpData.user?.id;
     }
 
-    if (!signUpData.user) {
+    if (!userId) {
       setError('Failed to create admin account. Please try again.');
       setLoading(false);
       return;
@@ -74,6 +98,13 @@ export default function AdminSetup({ onSuccess }: AdminSetupProps) {
     });
 
     if (rpcError) {
+      // If the error is "Public signup is not available", it means an admin
+      // already exists. Try to sign in and go to dashboard.
+      if (rpcError.message.includes('invitation is required') || rpcError.message.includes('Public signup')) {
+        // Admin already exists — just go to the funnel, the session is valid
+        onSuccess();
+        return;
+      }
       setError(rpcError.message || 'Failed to create admin profile.');
       setLoading(false);
       return;
@@ -183,6 +214,16 @@ export default function AdminSetup({ onSuccess }: AdminSetupProps) {
             )}
           </button>
         </form>
+
+        <div className="mt-6 text-center">
+          <button
+            onClick={onBack}
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-400 transition hover:text-white"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to landing page
+          </button>
+        </div>
       </div>
     </div>
   );
