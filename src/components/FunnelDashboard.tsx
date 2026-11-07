@@ -168,8 +168,15 @@ export default function FunnelDashboard({ onEditProfile }: FunnelDashboardProps)
     won: scopedLeads.filter((l) => l.status === 'won').length,
   };
 
+  const baseUrl = (() => {
+    if (typeof window === 'undefined') return '';
+    const path = window.location.pathname.replace(/index\.html$/, '');
+    const normalized = path.endsWith('/') ? path : path + '/';
+    return window.location.origin + normalized;
+  })();
+
   const personalLink = profile
-    ? `${window.location.origin}/?rep=${profile.slug}`
+    ? `${baseUrl}?rep=${profile.slug}`
     : '';
 
   function copyPersonalLink() {
@@ -190,11 +197,11 @@ export default function FunnelDashboard({ onEditProfile }: FunnelDashboardProps)
               {!isAdmin && profile?.slug && (
                 <>
                   <a
-                    href={`${window.location.origin}/?rep=${profile.slug}`}
+                    href={`${baseUrl}?rep=${profile.slug}`}
                     className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100"
                   >
                     <ArrowLeft className="h-4 w-4" />
-                    <span className="hidden sm:inline">My Landing Page</span>
+                    <span>My Landing Page</span>
                   </a>
                   <div className="h-6 w-px bg-slate-200" />
                 </>
@@ -217,7 +224,7 @@ export default function FunnelDashboard({ onEditProfile }: FunnelDashboardProps)
                   className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
                 >
                   <UserCog className="h-4 w-4" />
-                  <span className="hidden sm:inline">Profile</span>
+                  <span>Edit Profile</span>
                 </button>
               )}
               {isAdmin && (

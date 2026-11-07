@@ -13,6 +13,7 @@ export default function ProfileSetup({ onComplete }: ProfileSetupProps) {
   const [title, setTitle] = useState(profile?.title || 'Sales & Leasing Consultant');
   const [phone, setPhone] = useState(profile?.phone || '');
   const [photoUrl, setPhotoUrl] = useState(profile?.photo_url || '');
+  const isInitialSetup = !profile?.profile_setup_complete;
   const [dealershipName, setDealershipName] = useState(profile?.dealership_name || 'Mark Christopher Auto Center');
   const [dealershipAddress, setDealershipAddress] = useState(profile?.dealership_address || '2131 Convention Center Way\nOntario, CA 91764');
   const [loading, setLoading] = useState(false);
@@ -294,9 +295,15 @@ export default function ProfileSetup({ onComplete }: ProfileSetupProps) {
             </p>
           )}
 
+          {isInitialSetup && !photoUrl && (
+            <p className="mt-4 rounded-lg bg-amber-50 px-4 py-3 text-sm font-medium text-amber-700">
+              Please upload a profile photo to continue. Your photo appears on your customer-facing landing page.
+            </p>
+          )}
+
           <button
             type="submit"
-            disabled={loading || !fullName.trim()}
+            disabled={loading || !fullName.trim() || (isInitialSetup && !photoUrl)}
             className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading ? (
