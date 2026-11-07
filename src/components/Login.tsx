@@ -1,13 +1,12 @@
 import { useState } from 'react';
-import { Loader2, LogIn } from 'lucide-react';
+import { Loader2, LogIn, Car } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 interface LoginProps {
   onSuccess: () => void;
-  onGoToLanding: () => void;
 }
 
-export default function Login({ onSuccess, onGoToLanding }: LoginProps) {
+export default function Login({ onSuccess }: LoginProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -43,11 +42,11 @@ export default function Login({ onSuccess, onGoToLanding }: LoginProps) {
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#b38318]">
-            <LogIn className="h-7 w-7 text-white" />
+            <Car className="h-7 w-7 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-white">Staff Sign In</h1>
+          <h1 className="text-2xl font-bold text-white">Mark Christopher Auto Center</h1>
           <p className="mt-2 text-sm text-slate-400">
-            Sign in to access your lead dashboard.
+            Staff sign in to access your lead dashboard.
           </p>
         </div>
 
@@ -101,19 +100,13 @@ export default function Login({ onSuccess, onGoToLanding }: LoginProps) {
                 Signing in...
               </>
             ) : (
-              'Sign In'
+              <>
+                <LogIn className="h-4 w-4" />
+                Sign In
+              </>
             )}
           </button>
         </form>
-
-        <div className="mt-6 text-center">
-          <button
-            onClick={onGoToLanding}
-            className="text-sm font-medium text-slate-400 transition hover:text-white"
-          >
-            Back to landing page
-          </button>
-        </div>
       </div>
     </div>
   );

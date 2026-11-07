@@ -24,6 +24,7 @@ import {
   CheckCircle2,
   UserCog,
   QrCode,
+  Trash2,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
@@ -39,11 +40,10 @@ import {
 import AdminInvite from './AdminInvite';
 
 interface FunnelDashboardProps {
-  onGoToLanding: () => void;
   onEditProfile: () => void;
 }
 
-export default function FunnelDashboard({ onGoToLanding, onEditProfile }: FunnelDashboardProps) {
+export default function FunnelDashboard({ onEditProfile }: FunnelDashboardProps) {
   const { profile, signOut } = useAuth();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
@@ -119,6 +119,24 @@ export default function FunnelDashboard({ onGoToLanding, onEditProfile }: Funnel
     }
   }
 
+  async function deleteLead(leadId: string) {
+    if (!supabase) {
+      setError('The lead dashboard is temporarily unavailable.');
+      return;
+    }
+
+    const { error: err } = await supabase
+      .from('leads')
+      .delete()
+      .eq('id', leadId);
+    if (err) {
+      setError('Failed to delete lead.');
+      return;
+    }
+    setSelectedLead(null);
+    await fetchLeads();
+  }
+
   // Filter leads: admin sees all (optionally filtered by rep), sales sees only their own
   const scopedLeads = isAdmin
     ? filterRep === 'all'
@@ -169,14 +187,18 @@ export default function FunnelDashboard({ onGoToLanding, onEditProfile }: Funnel
         <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <button
-                onClick={onGoToLanding}
-                className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                <span className="hidden sm:inline">Landing Page</span>
-              </button>
-              <div className="h-6 w-px bg-slate-200" />
+              {!isAdmin && profile?.slug && (
+                <>
+                  <a
+                    href={`${window.location.origin}/?rep=${profile.slug}`}
+                    className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    <span className="hidden sm:inline">My Landing Page</span>
+                  </a>
+                  <div className="h-6 w-px bg-slate-200" />
+                </>
+              )}
               <h1 className="text-base font-bold text-slate-900 sm:text-lg">
                 {isAdmin ? 'Team Lead Dashboard' : 'My Lead Dashboard'}
               </h1>
@@ -347,6 +369,7 @@ export default function FunnelDashboard({ onGoToLanding, onEditProfile }: Funnel
           lead={selectedLead}
           onClose={() => setSelectedLead(null)}
           onUpdateStatus={updateLeadStatus}
+          onDelete={deleteLead}
         />
       )}
 
@@ -618,11 +641,15 @@ function LeadDetailModal({
   lead,
   onClose,
   onUpdateStatus,
+  onDelete,
 }: {
   lead: Lead;
   onClose: () => void;
   onUpdateStatus: (id: string, status: LeadStatus) => void;
+  onDelete: (id: string) => void;
 }) {
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/50 p-0 backdrop-blur-sm sm:items-center sm:p-4"
@@ -767,6 +794,40 @@ function LeadDetailModal({
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Delete */}
+          <div className="border-t border-slate-200 pt-4">
+            {!confirmDelete ? (
+              <button
+                onClick={() => setConfirmDelete(true)}
+                className="flex items-center gap-2 rounded-lg border border-rose-200 px-4 py-2.5 text-sm font-semibold text-rose-600 transition hover:bg-rose-50"
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete Lead
+              </button>
+            ) : (
+              <div className="rounded-lg bg-rose-50 p-4">
+                <p className="text-sm font-medium text-rose-700">
+                  Are you sure? This permanently removes the lead record.
+                </p>
+                <div className="mt-3 flex gap-2">
+                  <button
+                    onClick={() => onDelete(lead.id)}
+                    className="flex items-center gap-1.5 rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Yes, delete
+                  </button>
+                  <button
+                    onClick={() => setConfirmDelete(false)}
+                    className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

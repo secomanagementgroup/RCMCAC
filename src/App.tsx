@@ -23,7 +23,7 @@ function getInviteTokenFromUrl(): string | null {
 
 function AppContent() {
   const { session, profile, loading } = useAuth();
-  const [view, setView] = useState<View>('landing');
+  const [view, setView] = useState<View>('login');
   const [repSlug, setRepSlug] = useState<string | undefined>(undefined);
   const [inviteToken, setInviteToken] = useState<string | null>(null);
   const [hasAdmin, setHasAdmin] = useState<boolean | null>(null);
@@ -31,7 +31,10 @@ function AppContent() {
   // Check URL on mount for rep slug or invite token
   useEffect(() => {
     const slug = getRepSlugFromUrl();
-    if (slug) setRepSlug(slug);
+    if (slug) {
+      setRepSlug(slug);
+      setView('landing');
+    }
 
     const token = getInviteTokenFromUrl();
     if (token) {
@@ -88,7 +91,7 @@ function AppContent() {
     }
   }, [session, profile, loading, view, inviteToken, hasAdmin]);
 
-  // Handle navigation to funnel — check auth
+  // Handle navigation from landing page "Staff Login" button
   function handleGoToFunnel() {
     if (loading) return;
     if (session && profile?.profile_setup_complete) {
@@ -107,7 +110,7 @@ function AppContent() {
   }
 
   // Show loading screen while auth state resolves
-  if (loading && view !== 'accept-invite') {
+  if (loading && view !== 'accept-invite' && view !== 'landing') {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-100">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-slate-900" />
@@ -136,6 +139,16 @@ function AppContent() {
     );
   }
 
+  // Landing page (only for rep links / customer-facing pages with ?rep=)
+  if (view === 'landing' && repSlug) {
+    return (
+      <LandingPage
+        onGoToFunnel={handleGoToFunnel}
+        repSlug={repSlug}
+      />
+    );
+  }
+
   // Admin bootstrap (one-time) — goes straight to dashboard, no profile setup
   if (view === 'admin-setup' || (view === 'login' && hasAdmin === false)) {
     return (
@@ -143,7 +156,7 @@ function AppContent() {
         onSuccess={() => {
           setView('funnel');
         }}
-        onBack={() => setView('landing')}
+        onBack={() => setView('login')}
       />
     );
   }
@@ -157,7 +170,7 @@ function AppContent() {
     );
   }
 
-  // Login screen
+  // Login screen — default view for staff
   if (view === 'login' || (!session && (view === 'funnel'))) {
     return (
       <Login
@@ -165,7 +178,6 @@ function AppContent() {
           // Auth state change will handle redirect
           setView('funnel');
         }}
-        onGoToLanding={() => setView('landing')}
       />
     );
   }
@@ -176,23 +188,20 @@ function AppContent() {
       return (
         <Login
           onSuccess={() => setView('funnel')}
-          onGoToLanding={() => setView('landing')}
         />
       );
     }
     return (
       <FunnelDashboard
-        onGoToLanding={() => setView('landing')}
         onEditProfile={() => setView('profile-setup')}
       />
     );
   }
 
-  // Default: landing page
+  // Fallback: show login
   return (
-    <LandingPage
-      onGoToFunnel={handleGoToFunnel}
-      repSlug={repSlug}
+    <Login
+      onSuccess={() => setView('funnel')}
     />
   );
 }
