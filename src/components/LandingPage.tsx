@@ -15,6 +15,7 @@ import {
 import LeadForm from './LeadForm';
 import { supabase } from '@/lib/supabase';
 import { Profile } from '@/lib/types';
+import { getPalette, type Palette } from '@/lib/palettes';
 
 interface LandingPageProps {
   onGoToFunnel: () => void;
@@ -33,6 +34,7 @@ const FALLBACK_PROFILE: Profile = {
   dealership_address: '2131 Convention Center Way\nOntario, CA 91764',
   role: 'sales',
   profile_setup_complete: false,
+  theme_palette: null,
   created_at: '',
   updated_at: '',
 };
@@ -88,31 +90,36 @@ export default function LandingPage({ onGoToFunnel, repSlug }: LandingPageProps)
   }
 
   const p = profile || FALLBACK_PROFILE;
+  const pal: Palette = getPalette(p.theme_palette);
   const hasPhoto = Boolean(p.photo_url);
   const photoSrc = p.photo_url || '';
   const initials = getInitials(p.full_name);
   const addressLines = (p.dealership_address || '').split('\n').filter(Boolean);
+  const firstName = p.full_name.split(' ')[0] || p.full_name;
 
   return (
-    <div className="min-h-screen bg-[#f6f5f2] text-[#111111]">
+    <div className="min-h-screen text-[#111111]" style={{ background: pal.pageBg }}>
       <header className="border-b border-black/10 bg-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#b38318] text-white">
+            <div
+              className="flex h-10 w-10 items-center justify-center rounded-full text-white"
+              style={{ background: pal.accent }}
+            >
               <Car className="h-5 w-5" />
             </div>
             <div>
               <p className="text-sm font-extrabold uppercase tracking-[0.14em] text-[#111111]">
                 {p.full_name}
               </p>
-              <p className="text-xs font-medium uppercase tracking-[0.16em] text-[#7a5a13]">
+              <p className="text-xs font-medium uppercase tracking-[0.16em]" style={{ color: pal.accentMuted }}>
                 {p.title}
               </p>
             </div>
           </div>
           <button
             onClick={onGoToFunnel}
-            className="rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wide text-[#6b6b6b] transition hover:bg-[#f3f0e7] hover:text-[#111111] sm:px-4 sm:text-sm"
+            className="rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wide text-[#6b6b6b] transition hover:bg-slate-100 hover:text-[#111111] sm:px-4 sm:text-sm"
           >
             Staff Login
           </button>
@@ -120,7 +127,15 @@ export default function LandingPage({ onGoToFunnel, repSlug }: LandingPageProps)
       </header>
 
       <main>
-        <section className="relative isolate overflow-hidden border-b border-[#b38318]/30 bg-[#111111] text-white">
+        {/* Hero — unified layout for mobile and desktop */}
+        <section
+          className="relative isolate overflow-hidden border-b text-white"
+          style={{
+            background: pal.dark,
+            borderBottomColor: `${pal.borderAccent}30`,
+          }}
+        >
+          {/* Desktop: photo on the right with gradient blend */}
           <div className="absolute inset-y-0 right-0 hidden w-[58%] sm:block">
             {hasPhoto ? (
               <img
@@ -129,75 +144,113 @@ export default function LandingPage({ onGoToFunnel, repSlug }: LandingPageProps)
                 className="h-full w-full object-cover object-top"
               />
             ) : (
-              <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-br from-[#2a2519] to-[#111111]">
-                <div className="flex h-40 w-40 items-center justify-center rounded-full bg-[#b38318]/20 ring-4 ring-[#b38318]/30">
+              <div
+                className="flex h-full w-full flex-col items-center justify-center"
+                style={{ background: `linear-gradient(to bottom right, ${pal.darkSoft}, ${pal.dark})` }}
+              >
+                <div
+                  className="flex h-40 w-40 items-center justify-center rounded-full"
+                  style={{
+                    background: `${pal.accent}33`,
+                    boxShadow: `0 0 0 4px ${pal.accent}4d`,
+                  }}
+                >
                   {initials ? (
-                    <span className="text-5xl font-black tracking-wide text-[#e0bb54]">{initials}</span>
+                    <span className="text-5xl font-black tracking-wide" style={{ color: pal.accentBright }}>
+                      {initials}
+                    </span>
                   ) : (
-                    <User className="h-16 w-16 text-[#e0bb54]/60" />
+                    <User className="h-16 w-16" style={{ color: `${pal.accentBright}99` }} />
                   )}
                 </div>
               </div>
             )}
-            <div className="absolute inset-0 bg-gradient-to-r from-[#111111] via-[#111111]/75 to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#111111]/60 via-transparent to-[#111111]/10" />
+            <div
+              className="absolute inset-0"
+              style={{ background: `linear-gradient(to right, ${pal.dark}, ${pal.dark}bf, transparent)` }}
+            />
+            <div
+              className="absolute inset-0"
+              style={{ background: `linear-gradient(to top, ${pal.dark}99, transparent, ${pal.dark}1a)` }}
+            />
           </div>
+
+          {/* Mobile: photo as full-bleed background with gradient blend (same approach as desktop) */}
+          <div className="absolute inset-0 sm:hidden">
+            {hasPhoto ? (
+              <img
+                src={photoSrc}
+                alt={`${p.full_name}, ${p.title || 'sales consultant'}`}
+                className="h-full w-full object-cover object-top"
+              />
+            ) : (
+              <div
+                className="flex h-full w-full flex-col items-center justify-center"
+                style={{ background: `linear-gradient(to bottom right, ${pal.darkSoft}, ${pal.dark})` }}
+              >
+                <div
+                  className="flex h-32 w-32 items-center justify-center rounded-full"
+                  style={{
+                    background: `${pal.accent}33`,
+                    boxShadow: `0 0 0 4px ${pal.accent}4d`,
+                  }}
+                >
+                  {initials ? (
+                    <span className="text-4xl font-black tracking-wide" style={{ color: pal.accentBright }}>
+                      {initials}
+                    </span>
+                  ) : (
+                    <User className="h-12 w-12" style={{ color: `${pal.accentBright}99` }} />
+                  )}
+                </div>
+              </div>
+            )}
+            {/* Gradient overlays — top fade in, bottom fade out, left-to-right darkening for text readability */}
+            <div
+              className="absolute inset-0"
+              style={{ background: `linear-gradient(to bottom, ${pal.dark}ee, ${pal.dark}55 30%, ${pal.dark}44 55%, ${pal.dark}dd 85%, ${pal.dark})` }}
+            />
+          </div>
+
           <div className="relative mx-auto flex min-h-[600px] max-w-6xl items-center px-4 py-16 sm:px-6 sm:py-20">
             <div className="relative z-10 max-w-2xl sm:-mr-24">
-              <div className="mb-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-bold uppercase tracking-[0.2em] text-[#e0bb54] sm:text-sm">
+              <div
+                className="mb-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-bold uppercase tracking-[0.2em] sm:text-sm"
+                style={{ color: pal.accentBright }}
+              >
                 <span>Chevrolet</span>
-                <span className="text-[#b38318]">|</span>
+                <span style={{ color: pal.divider }}>|</span>
                 <span>Buick</span>
-                <span className="text-[#b38318]">|</span>
+                <span style={{ color: pal.divider }}>|</span>
                 <span>GMC</span>
-                <span className="text-[#b38318]">|</span>
+                <span style={{ color: pal.divider }}>|</span>
                 <span>Cadillac</span>
               </div>
-              <div className="h-px w-20 bg-[#d4a72c]" />
+              <div className="h-px w-20" style={{ background: pal.heroLine }} />
               <h1 className="mt-6 max-w-2xl text-4xl font-black uppercase leading-[1.04] tracking-tight text-white sm:text-6xl">
                 Let&apos;s get you on the road.
               </h1>
               <p className="mt-5 max-w-xl text-base leading-7 text-[#e4e4e4] sm:text-lg">
-                Looking for your next GM vehicle or ready to sell your current one? Share a few details and {p.full_name.split(' ')[0]}&apos;ll help you take the next step.
+                Looking for your next GM vehicle or ready to sell your current one? Share a few details and {firstName}&apos;ll help you take the next step.
               </p>
               <div className="mt-7 flex flex-wrap gap-3 text-sm font-semibold text-[#f4f1e8]">
-                <span className="inline-flex items-center gap-2 rounded-full border border-[#d8c28a]/70 bg-[#2a2519]/90 px-4 py-2 backdrop-blur-sm">
-                  <CheckCircle2 className="h-4 w-4 text-[#e0bb54]" />
-                  Transparent pricing
-                </span>
-                <span className="inline-flex items-center gap-2 rounded-full border border-[#d8c28a]/70 bg-[#2a2519]/90 px-4 py-2 backdrop-blur-sm">
-                  <CheckCircle2 className="h-4 w-4 text-[#e0bb54]" />
-                  No pressure
-                </span>
-                <span className="inline-flex items-center gap-2 rounded-full border border-[#d8c28a]/70 bg-[#2a2519]/90 px-4 py-2 backdrop-blur-sm">
-                  <Clock3 className="h-4 w-4 text-[#e0bb54]" />
-                  Fast response
-                </span>
-                <span className="inline-flex items-center gap-2 rounded-full border border-[#d8c28a]/70 bg-[#2a2519]/90 px-4 py-2 backdrop-blur-sm">
-                  <CheckCircle2 className="h-4 w-4 text-[#e0bb54]" />
-                  Professional service
-                </span>
+                {['Transparent pricing', 'No pressure', 'Fast response', 'Professional service'].map((label, i) => {
+                  const Icon = i === 2 ? Clock3 : CheckCircle2;
+                  return (
+                    <span
+                      key={label}
+                      className="inline-flex items-center gap-2 rounded-full border px-4 py-2 backdrop-blur-sm"
+                      style={{
+                        borderColor: `${pal.badgeBorder}b3`,
+                        background: `${pal.badgeBg}e6`,
+                      }}
+                    >
+                      <Icon className="h-4 w-4" style={{ color: pal.accentBright }} />
+                      {label}
+                    </span>
+                  );
+                })}
               </div>
-            </div>
-            <div className="relative mt-10 h-[360px] w-full sm:hidden">
-              {hasPhoto ? (
-                <img
-                  src={photoSrc}
-                  alt={`${p.full_name}, ${p.title || 'sales consultant'}`}
-                  className="h-full w-full object-cover object-top"
-                />
-              ) : (
-                <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-br from-[#2a2519] to-[#111111]">
-                  <div className="flex h-32 w-32 items-center justify-center rounded-full bg-[#b38318]/20 ring-4 ring-[#b38318]/30">
-                    {initials ? (
-                      <span className="text-4xl font-black tracking-wide text-[#e0bb54]">{initials}</span>
-                    ) : (
-                      <User className="h-12 w-12 text-[#e0bb54]/60" />
-                    )}
-                  </div>
-                </div>
-              )}
-              <div className="absolute inset-0 bg-gradient-to-t from-[#111111] via-transparent to-[#111111]" />
             </div>
           </div>
         </section>
@@ -205,35 +258,43 @@ export default function LandingPage({ onGoToFunnel, repSlug }: LandingPageProps)
         <section id="lead-form" className="py-12 sm:py-16">
           <div className="mx-auto max-w-2xl px-4 sm:px-6">
             <div className="mb-7 text-center">
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#8a6617]">Start here</p>
+              <p className="text-xs font-bold uppercase tracking-[0.2em]" style={{ color: pal.accentTint }}>
+                Start here
+              </p>
               <h2 className="mt-2 text-3xl font-black uppercase tracking-tight text-[#111111] sm:text-4xl">
-                How can {p.full_name.split(' ')[0]} help?
+                How can {firstName} help?
               </h2>
               <p className="mt-3 text-sm leading-6 text-[#666666] sm:text-base">
-                Tell us whether you&apos;re buying or selling, and {p.full_name.split(' ')[0]}&apos;ll be in touch within one business day.
+                Tell us whether you&apos;re buying or selling, and {firstName}&apos;ll be in touch within one business day.
               </p>
             </div>
             <LeadForm repSlug={p.slug} />
           </div>
         </section>
 
-        <section className="border-y border-black/10 bg-[#111111] py-10 text-white sm:py-12">
+        <section
+          className="border-y border-black/10 py-10 text-white sm:py-12"
+          style={{ background: pal.dark }}
+        >
           <div className="mx-auto max-w-6xl px-4 sm:px-6">
             <div className="grid gap-8 sm:grid-cols-3">
               <TrustItem
                 icon={<ShieldCheck className="h-5 w-5" />}
                 title="Straightforward guidance"
                 text="Clear answers and a simple process from first conversation to keys in hand."
+                accent={pal.accent}
               />
               <TrustItem
                 icon={<Award className="h-5 w-5" />}
                 title="Full GM lineup"
                 text="One contact for Chevrolet, Buick, GMC, and Cadillac vehicles."
+                accent={pal.accent}
               />
               <TrustItem
                 icon={<Sparkles className="h-5 w-5" />}
                 title="Value for your vehicle"
                 text="Get a thoughtful appraisal when you are ready to sell or trade."
+                accent={pal.accent}
               />
             </div>
           </div>
@@ -249,15 +310,15 @@ export default function LandingPage({ onGoToFunnel, repSlug }: LandingPageProps)
             </div>
             <div className="space-y-3 text-sm text-[#555555]">
               {p.phone && (
-                <p className="flex items-center gap-3"><Phone className="h-4 w-4 text-[#b38318]" />{p.phone}</p>
+                <p className="flex items-center gap-3"><Phone className="h-4 w-4" style={{ color: pal.accent }} />{p.phone}</p>
               )}
               {p.email && (
-                <p className="flex items-center gap-3"><Mail className="h-4 w-4 text-[#b38318]" />{p.email}</p>
+                <p className="flex items-center gap-3"><Mail className="h-4 w-4" style={{ color: pal.accent }} />{p.email}</p>
               )}
             </div>
             <div className="space-y-3 text-sm text-[#555555]">
               {addressLines.length > 0 && (
-                <p className="flex items-start gap-3"><MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#b38318]" />{addressLines.map((line, i) => <span key={i} className="block">{line}</span>)}</p>
+                <p className="flex items-start gap-3"><MapPin className="mt-0.5 h-4 w-4 shrink-0" style={{ color: pal.accent }} />{addressLines.map((line, i) => <span key={i} className="block">{line}</span>)}</p>
               )}
             </div>
           </div>
@@ -274,14 +335,19 @@ function TrustItem({
   icon,
   title,
   text,
+  accent,
 }: {
   icon: React.ReactNode;
   title: string;
   text: string;
+  accent: string;
 }) {
   return (
     <div className="flex gap-3">
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#b38318] text-white">
+      <div
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white"
+        style={{ background: accent }}
+      >
         {icon}
       </div>
       <div>

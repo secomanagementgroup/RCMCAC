@@ -24,6 +24,7 @@ export interface Profile {
   dealership_address: string | null;
   role: UserRole;
   profile_setup_complete: boolean;
+  theme_palette: string | null;
   created_at: string;
   updated_at: string;
 }

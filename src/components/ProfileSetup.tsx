@@ -1,7 +1,8 @@
 import { useState, useRef, useCallback } from 'react';
-import { Loader2, User, Briefcase, Phone, MapPin, Building2, Save, Link as LinkIcon, UploadCloud, ImageIcon, X } from 'lucide-react';
+import { Loader2, User, Briefcase, Phone, MapPin, Building2, Save, Link as LinkIcon, UploadCloud, ImageIcon, X, Palette as PaletteIcon, Check } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
+import { PALETTES, getPalette, type PaletteKey } from '@/lib/palettes';
 
 interface ProfileSetupProps {
   onComplete: () => void;
@@ -18,6 +19,9 @@ export default function ProfileSetup({ onComplete, onCancel, isEditing }: Profil
   const isInitialSetup = !profile?.profile_setup_complete;
   const [dealershipName, setDealershipName] = useState(profile?.dealership_name || 'Mark Christopher Auto Center');
   const [dealershipAddress, setDealershipAddress] = useState(profile?.dealership_address || '2131 Convention Center Way\nOntario, CA 91764');
+  const [paletteKey, setPaletteKey] = useState<PaletteKey>(
+    (PALETTES.find((p) => p.key === profile?.theme_palette)?.key) ?? 'gold'
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
@@ -109,6 +113,7 @@ export default function ProfileSetup({ onComplete, onCancel, isEditing }: Profil
         photo_url: photoUrl.trim() || null,
         dealership_name: dealershipName.trim() || null,
         dealership_address: dealershipAddress.trim() || null,
+        theme_palette: paletteKey,
         profile_setup_complete: true,
         updated_at: new Date().toISOString(),
       })
@@ -288,6 +293,51 @@ export default function ProfileSetup({ onComplete, onCancel, isEditing }: Profil
                   className="w-full resize-none rounded-xl border border-slate-300 py-3 pl-10 pr-4 text-sm text-slate-900 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
                 />
               </div>
+            </div>
+
+            {/* Color palette picker */}
+            <div>
+              <label className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-700">
+                <PaletteIcon className="h-4 w-4 text-slate-400" />
+                Landing Page Color Theme
+              </label>
+              <p className="mb-3 text-xs text-slate-500">
+                Pick a color scheme for your customer-facing page. This overrides any colors derived from your photo.
+              </p>
+              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+                {PALETTES.map((p) => {
+                  const selected = p.key === paletteKey;
+                  return (
+                    <button
+                      key={p.key}
+                      type="button"
+                      onClick={() => setPaletteKey(p.key)}
+                      className={`relative flex flex-col overflow-hidden rounded-xl border-2 transition ${
+                        selected
+                          ? 'border-slate-900 ring-2 ring-slate-900/10'
+                          : 'border-slate-200 hover:border-slate-300'
+                      }`}
+                    >
+                      <div className="flex h-12 items-center gap-1 px-2" style={{ background: p.dark }}>
+                        <span className="h-6 w-6 rounded-full" style={{ background: p.accent }} />
+                        <span className="h-6 w-6 rounded-full" style={{ background: p.accentBright }} />
+                        <span className="h-6 w-6 rounded-full border" style={{ background: p.pageBg, borderColor: p.badgeBorder }} />
+                      </div>
+                      <div className="flex items-center justify-between px-3 py-2" style={{ background: p.pageBg }}>
+                        <span className="text-xs font-semibold" style={{ color: p.dark }}>
+                          {p.name}
+                        </span>
+                        {selected && (
+                          <Check className="h-3.5 w-3.5" style={{ color: p.accent }} />
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="mt-2 text-xs text-slate-400">
+                Current selection: <span className="font-medium text-slate-600">{getPalette(paletteKey).name}</span>
+              </p>
             </div>
           </div>
 
