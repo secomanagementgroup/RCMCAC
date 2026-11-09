@@ -234,7 +234,10 @@ export default function LeadForm({ repSlug }: LeadFormProps) {
                 icon={<CarIcon className="h-4 w-4" />}
                 label="Preferred GM Brand"
                 value={gmBrand}
-                onChange={(v) => setGmBrand(v)}
+                onChange={(v) => {
+                  setGmBrand(v);
+                  setVehicleInterest('');
+                }}
                 options={GM_BRANDS}
                 placeholder="Any brand"
               />
@@ -244,7 +247,13 @@ export default function LeadForm({ repSlug }: LeadFormProps) {
                   label="Vehicle of Interest"
                   value={vehicleInterest}
                   onChange={(v) => setVehicleInterest(v)}
-                  options={GM_VEHICLE_MODELS}
+                  options={
+                    gmBrand
+                      ? GM_VEHICLE_MODELS.filter(
+                          (m) => m.startsWith(gmBrand + ' ') || m === 'Not sure yet'
+                        )
+                      : GM_VEHICLE_MODELS
+                  }
                   placeholder="Select a GM vehicle"
                 />
               </div>
