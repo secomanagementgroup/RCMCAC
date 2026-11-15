@@ -4,11 +4,12 @@ import FunnelDashboard from '@/components/FunnelDashboard';
 import Login from '@/components/Login';
 import AdminSetup from '@/components/AdminSetup';
 import AcceptInvite from '@/components/AcceptInvite';
+import SelfServeSignup from '@/components/SelfServeSignup';
 import ProfileSetup from '@/components/ProfileSetup';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 
-type View = 'landing' | 'funnel' | 'login' | 'admin-setup' | 'accept-invite' | 'profile-setup';
+type View = 'landing' | 'funnel' | 'login' | 'admin-setup' | 'accept-invite' | 'profile-setup' | 'self-serve';
 
 function getRepSlugFromUrl(): string | undefined {
   const params = new URLSearchParams(window.location.search);
@@ -21,6 +22,10 @@ function getInviteTokenFromUrl(): string | null {
   return match ? match[1] : null;
 }
 
+function isJoinHash(): boolean {
+  return window.location.hash.replace(/^#/, '').trim().toLowerCase() === 'join';
+}
+
 function AppContent() {
   const { session, profile, loading } = useAuth();
   const [view, setView] = useState<View>('login');
@@ -29,18 +34,25 @@ function AppContent() {
   const [hasAdmin, setHasAdmin] = useState<boolean | null>(null);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
 
-  // Check URL on mount for rep slug or invite token
+  // Check URL on mount for rep slug, invite token, or join hash
   useEffect(() => {
     const slug = getRepSlugFromUrl();
     if (slug) {
       setRepSlug(slug);
       setView('landing');
+      return;
     }
 
     const token = getInviteTokenFromUrl();
     if (token) {
       setInviteToken(token);
       setView('accept-invite');
+      return;
+    }
+
+    if (isJoinHash()) {
+      setView('self-serve');
+      return;
     }
   }, []);
 
@@ -108,6 +120,30 @@ function AppContent() {
       }
       setView(hasAdmin === false ? 'admin-setup' : 'login');
     }
+  }
+
+  // Self-serve signup flow — stable #join URL
+  if (view === 'self-serve') {
+    if (session && profile) {
+      if (profile.role === 'admin') {
+        setView('funnel');
+        return null;
+      } else if (!profile.profile_setup_complete) {
+        setView('profile-setup');
+        return null;
+      } else {
+        setView('funnel');
+        return null;
+      }
+    }
+    return (
+      <SelfServeSignup
+        onSuccess={() => {
+          window.location.hash = '';
+          setView('profile-setup');
+        }}
+      />
+    );
   }
 
   // Show loading screen while auth state resolves

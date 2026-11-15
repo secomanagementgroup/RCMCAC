@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Loader2, Mail, Send, Trash2, Clock, CheckCircle2, X, UserPlus, Copy, ExternalLink, Info } from 'lucide-react';
+import { Loader2, Mail, Send, Trash2, Clock, CheckCircle2, X, UserPlus, Copy, ExternalLink, Info, QrCode } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { Invite, Profile } from '@/lib/types';
 
@@ -23,6 +23,8 @@ export default function AdminInvite({ onClose }: AdminInviteProps) {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loadingInvites, setLoadingInvites] = useState(true);
   const [copiedToken, setCopiedToken] = useState('');
+  const [qrRep, setQrRep] = useState<Profile | null>(null);
+  const [copiedRepSlug, setCopiedRepSlug] = useState('');
 
   const fetchInvites = useCallback(async () => {
     if (!supabase) return;
@@ -84,6 +86,16 @@ export default function AdminInvite({ onClose }: AdminInviteProps) {
     if (!supabase) return;
     await supabase.from('invites').delete().eq('id', id);
     await fetchInvites();
+  }
+
+  function getRepLink(slug: string) {
+    return `${getBaseUrl()}?rep=${slug}`;
+  }
+
+  function copyRepLink(slug: string) {
+    navigator.clipboard.writeText(getRepLink(slug));
+    setCopiedRepSlug(slug);
+    setTimeout(() => setCopiedRepSlug(''), 3000);
   }
 
   function getInviteLink(token: string) {
@@ -224,17 +236,43 @@ export default function AdminInvite({ onClose }: AdminInviteProps) {
                     ) : (
                       <Clock className="h-4 w-4 text-slate-300" />
                     )}
-                    {p.role === 'sales' && p.profile_setup_complete && p.slug && (
-                      <a
-                        href={`${getBaseUrl()}?rep=${p.slug}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
-                        title="View this rep's landing page"
-                      >
-                        <ExternalLink className="h-3.5 w-3.5" />
-                        View Page
-                      </a>
+                    {p.slug && (
+                      <>
+                        <button
+                          onClick={() => copyRepLink(p.slug)}
+                          className="flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+                          title="Copy this rep's customer link"
+                        >
+                          {copiedRepSlug === p.slug ? (
+                            <>
+                              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                              Copied
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="h-3.5 w-3.5" />
+                              Copy Link
+                            </>
+                          )}
+                        </button>
+                        <button
+                          onClick={() => setQrRep(p)}
+                          className="flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+                          title="Show QR code for this rep's customer link"
+                        >
+                          <QrCode className="h-3.5 w-3.5" />
+                          QR
+                        </button>
+                        <a
+                          href={`${getBaseUrl()}?rep=${p.slug}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+                          title="View this rep's landing page"
+                        >
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </a>
+                      </>
                     )}
                   </div>
                 </div>
@@ -303,6 +341,60 @@ export default function AdminInvite({ onClose }: AdminInviteProps) {
           </div>
         </div>
       </div>
+
+      {qrRep && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm"
+          onClick={() => setQrRep(null)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-4 flex items-center justify-center gap-2">
+              <QrCode className="h-5 w-5 text-slate-700" />
+              <h2 className="text-lg font-bold text-slate-900">{qrRep.full_name}&apos;s Link</h2>
+            </div>
+            <div className="mx-auto mb-4 rounded-xl border border-slate-200 bg-white p-3">
+              <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(getRepLink(qrRep.slug))}`}
+                alt={`QR code for ${qrRep.full_name}'s link`}
+                className="mx-auto h-48 w-48"
+              />
+            </div>
+            <p className="mb-3 text-xs text-slate-500">
+              Scan to open {qrRep.full_name}&apos;s customer landing page. Leads submitted from this page go to their dashboard.
+            </p>
+            <div className="flex items-center gap-2">
+              <code className="flex-1 truncate rounded-lg bg-slate-100 px-3 py-2 text-xs text-slate-700">
+                {getRepLink(qrRep.slug)}
+              </code>
+              <button
+                onClick={() => copyRepLink(qrRep.slug)}
+                className="flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white transition hover:bg-slate-800"
+              >
+                {copiedRepSlug === qrRep.slug ? (
+                  <>
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    Copied
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-3.5 w-3.5" />
+                    Copy
+                  </>
+                )}
+              </button>
+            </div>
+            <button
+              onClick={() => setQrRep(null)}
+              className="mt-4 w-full rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
