@@ -20,11 +20,14 @@ import { supabase } from '@/lib/supabase';
 import {
   LeadType,
   LeadInsert,
-  GM_BRANDS,
-  GM_VEHICLE_MODELS,
   TIMEFRAMES,
   VEHICLE_CONDITIONS,
 } from '@/lib/types';
+import {
+  ALL_MAKES,
+  getModelsForMake,
+  NOT_SURE_YET,
+} from '@/lib/vehicles';
 
 type FormState = 'idle' | 'submitting' | 'success' | 'error';
 
@@ -44,7 +47,7 @@ export default function LeadForm({ repSlug }: LeadFormProps) {
   const [notes, setNotes] = useState('');
 
   // Buying fields
-  const [gmBrand, setGmBrand] = useState('');
+  const [preferredBrand, setPreferredBrand] = useState('');
   const [vehicleInterest, setVehicleInterest] = useState('');
   const [paymentGoal, setPaymentGoal] = useState('');
   const [downPayment, setDownPayment] = useState('');
@@ -64,7 +67,7 @@ export default function LeadForm({ repSlug }: LeadFormProps) {
     setPhone('');
     setTimeframe('');
     setNotes('');
-    setGmBrand('');
+    setPreferredBrand('');
     setVehicleInterest('');
     setPaymentGoal('');
     setDownPayment('');
@@ -96,7 +99,7 @@ export default function LeadForm({ repSlug }: LeadFormProps) {
     }
 
     if (leadType === 'buying') {
-      payload.gm_brand = (gmBrand || null) as LeadInsert['gm_brand'];
+      payload.preferred_brand = (preferredBrand || null) as LeadInsert['preferred_brand'];
       payload.vehicle_interest = vehicleInterest || null;
       payload.payment_goal = paymentGoal.trim() || null;
       payload.down_payment = downPayment.trim() || null;
@@ -232,13 +235,13 @@ export default function LeadForm({ repSlug }: LeadFormProps) {
             <div className="grid gap-4 sm:grid-cols-2">
               <SelectField
                 icon={<CarIcon className="h-4 w-4" />}
-                label="Preferred GM Brand"
-                value={gmBrand}
+                label="Preferred Brand"
+                value={preferredBrand}
                 onChange={(v) => {
-                  setGmBrand(v);
+                  setPreferredBrand(v);
                   setVehicleInterest('');
                 }}
-                options={GM_BRANDS}
+                options={ALL_MAKES}
                 placeholder="Any brand"
               />
               <div className="sm:col-span-2">
@@ -248,13 +251,11 @@ export default function LeadForm({ repSlug }: LeadFormProps) {
                   value={vehicleInterest}
                   onChange={(v) => setVehicleInterest(v)}
                   options={
-                    gmBrand
-                      ? GM_VEHICLE_MODELS.filter(
-                          (m) => m.startsWith(gmBrand + ' ') || m === 'Not sure yet'
-                        )
-                      : GM_VEHICLE_MODELS
+                    preferredBrand
+                      ? [NOT_SURE_YET, ...getModelsForMake(preferredBrand)]
+                      : [NOT_SURE_YET]
                   }
-                  placeholder="Select a GM vehicle"
+                  placeholder="Select a vehicle"
                 />
               </div>
               <Field
@@ -297,19 +298,26 @@ export default function LeadForm({ repSlug }: LeadFormProps) {
                 onChange={(v) => setVehicleYear(v)}
                 placeholder="2020"
               />
-              <Field
+              <SelectField
                 icon={<Tag className="h-4 w-4" />}
                 label="Make"
                 value={vehicleMake}
-                onChange={(v) => setVehicleMake(v)}
-                placeholder="Chevrolet"
+                onChange={(v) => {
+                  setVehicleMake(v);
+                  setVehicleModel('');
+                }}
+                options={ALL_MAKES}
+                placeholder="Select make"
               />
-              <Field
+              <SelectField
                 icon={<CarIcon className="h-4 w-4" />}
                 label="Model"
                 value={vehicleModel}
                 onChange={(v) => setVehicleModel(v)}
-                placeholder="Silverado"
+                options={
+                  vehicleMake ? getModelsForMake(vehicleMake) : []
+                }
+                placeholder="Select model"
               />
               <Field
                 icon={<Gauge className="h-4 w-4" />}

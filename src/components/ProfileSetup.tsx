@@ -1,8 +1,9 @@
 import { useState, useRef, useCallback } from 'react';
-import { Loader2, User, Briefcase, Phone, MapPin, Building2, Save, Link as LinkIcon, UploadCloud, ImageIcon, X, Palette as PaletteIcon, Check } from 'lucide-react';
+import { Loader2, User, Briefcase, Phone, MapPin, Building2, Save, Link as LinkIcon, UploadCloud, ImageIcon, X, Palette as PaletteIcon, Check, Car as CarIcon } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 import { PALETTES, getPalette, type PaletteKey } from '@/lib/palettes';
+import { ALL_MAKES, parseBrands, serializeBrands } from '@/lib/vehicles';
 
 interface ProfileSetupProps {
   onComplete: () => void;
@@ -21,6 +22,9 @@ export default function ProfileSetup({ onComplete, onCancel, isEditing }: Profil
   const [dealershipAddress, setDealershipAddress] = useState(profile?.dealership_address || '2131 Convention Center Way\nOntario, CA 91764');
   const [paletteKey, setPaletteKey] = useState<PaletteKey>(
     (PALETTES.find((p) => p.key === profile?.theme_palette)?.key) ?? 'gold'
+  );
+  const [selectedBrands, setSelectedBrands] = useState<string[]>(
+    parseBrands(profile?.brands)
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -114,6 +118,7 @@ export default function ProfileSetup({ onComplete, onCancel, isEditing }: Profil
         dealership_name: dealershipName.trim() || null,
         dealership_address: dealershipAddress.trim() || null,
         theme_palette: paletteKey,
+        brands: serializeBrands(selectedBrands),
         profile_setup_complete: true,
         updated_at: new Date().toISOString(),
       })
@@ -337,6 +342,45 @@ export default function ProfileSetup({ onComplete, onCancel, isEditing }: Profil
               </div>
               <p className="mt-2 text-xs text-slate-400">
                 Current selection: <span className="font-medium text-slate-600">{getPalette(paletteKey).name}</span>
+              </p>
+            </div>
+
+            {/* Brand selection */}
+            <div>
+              <label className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-700">
+                <CarIcon className="h-4 w-4 text-slate-400" />
+                Brands You Sell
+              </label>
+              <p className="mb-3 text-xs text-slate-500">
+                Select the brands that appear on your landing page and in the lead form. These show up as the brand names customers see when they visit your page.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {ALL_MAKES.map((brand) => {
+                  const selected = selectedBrands.includes(brand);
+                  return (
+                    <button
+                      key={brand}
+                      type="button"
+                      onClick={() => {
+                        setSelectedBrands((prev) =>
+                          selected
+                            ? prev.filter((b) => b !== brand)
+                            : [...prev, brand]
+                        );
+                      }}
+                      className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${
+                        selected
+                          ? 'border-slate-900 bg-slate-900 text-white'
+                          : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
+                      }`}
+                    >
+                      {brand}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="mt-2 text-xs text-slate-400">
+                {selectedBrands.length} brand{selectedBrands.length !== 1 ? 's' : ''} selected
               </p>
             </div>
           </div>

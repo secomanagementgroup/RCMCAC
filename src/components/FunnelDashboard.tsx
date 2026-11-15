@@ -32,11 +32,10 @@ import {
   Lead,
   LeadStatus,
   LeadType,
-  GmBrand,
   FUNNEL_STAGES,
-  GM_BRANDS,
   Profile,
 } from '@/lib/types';
+import { ALL_MAKES } from '@/lib/vehicles';
 import AdminInvite from './AdminInvite';
 
 interface FunnelDashboardProps {
@@ -50,7 +49,7 @@ export default function FunnelDashboard({ onEditProfile }: FunnelDashboardProps)
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState<LeadType | 'all'>('all');
-  const [filterBrand, setFilterBrand] = useState<GmBrand | 'all'>('all');
+  const [filterBrand, setFilterBrand] = useState<string>('all');
   const [filterRep, setFilterRep] = useState<string>('all');
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [allProfiles, setAllProfiles] = useState<Profile[]>([]);
@@ -156,7 +155,7 @@ export default function FunnelDashboard({ onEditProfile }: FunnelDashboardProps)
       (lead.vehicle_model || '').toLowerCase().includes(search.toLowerCase()) ||
       (lead.vehicle_vin || '').toLowerCase().includes(search.toLowerCase());
     const matchesType = filterType === 'all' || lead.lead_type === filterType;
-    const matchesBrand = filterBrand === 'all' || lead.gm_brand === filterBrand;
+    const matchesBrand = filterBrand === 'all' || lead.preferred_brand === filterBrand || lead.gm_brand === filterBrand;
     return matchesSearch && matchesType && matchesBrand;
   });
 
@@ -345,11 +344,11 @@ export default function FunnelDashboard({ onEditProfile }: FunnelDashboardProps)
               <Car className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <select
                 value={filterBrand}
-                onChange={(e) => setFilterBrand(e.target.value as GmBrand | 'all')}
+                onChange={(e) => setFilterBrand(e.target.value)}
                 className="appearance-none rounded-lg border border-slate-300 bg-white py-2.5 pl-9 pr-8 text-sm outline-none focus:border-slate-900"
               >
                 <option value="all">All Brands</option>
-                {GM_BRANDS.map((b) => (
+                {ALL_MAKES.map((b) => (
                   <option key={b} value={b}>
                     {b}
                   </option>
@@ -628,10 +627,10 @@ function LeadCard({
         <div className="mt-2 space-y-1">
           {lead.lead_type === 'buying' ? (
             <>
-              {lead.gm_brand && (
+              {lead.preferred_brand && (
                 <p className="text-xs text-slate-500">
                   <Car className="mr-1 inline h-3 w-3" />
-                  {lead.gm_brand}
+                  {lead.preferred_brand}
                   {lead.vehicle_interest ? ` — ${lead.vehicle_interest}` : ''}
                 </p>
               )}
@@ -777,8 +776,8 @@ function LeadDetailModal({
                 Buying Preferences
               </h3>
               <div className="grid gap-2">
-                {lead.gm_brand && (
-                  <DetailRow icon={<Car className="h-4 w-4" />} label="GM Brand" value={lead.gm_brand} />
+                {lead.preferred_brand && (
+                  <DetailRow icon={<Car className="h-4 w-4" />} label="Brand" value={lead.preferred_brand} />
                 )}
                 {lead.vehicle_interest && (
                   <DetailRow icon={<Tag className="h-4 w-4" />} label="Vehicle Interest" value={lead.vehicle_interest} />

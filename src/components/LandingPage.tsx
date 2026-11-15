@@ -16,6 +16,7 @@ import LeadForm from './LeadForm';
 import { supabase } from '@/lib/supabase';
 import { Profile } from '@/lib/types';
 import { getPalette, type Palette } from '@/lib/palettes';
+import { parseBrands } from '@/lib/vehicles';
 
 interface LandingPageProps {
   onGoToFunnel: () => void;
@@ -35,6 +36,7 @@ const FALLBACK_PROFILE: Profile = {
   role: 'sales',
   profile_setup_complete: false,
   theme_palette: null,
+  brands: null,
   created_at: '',
   updated_at: '',
 };
@@ -96,6 +98,8 @@ export default function LandingPage({ onGoToFunnel, repSlug }: LandingPageProps)
   const initials = getInitials(p.full_name);
   const addressLines = (p.dealership_address || '').split('\n').filter(Boolean);
   const firstName = p.full_name.split(' ')[0] || p.full_name;
+  const brands = parseBrands(p.brands);
+  const brandLine = brands.join(' · ');
 
   return (
     <div className="min-h-screen text-[#111111]" style={{ background: pal.pageBg }}>
@@ -215,23 +219,22 @@ export default function LandingPage({ onGoToFunnel, repSlug }: LandingPageProps)
           <div className="relative mx-auto flex min-h-[600px] max-w-6xl items-center px-4 py-16 sm:px-6 sm:py-20">
             <div className="relative z-10 max-w-2xl sm:-mr-24">
               <div
-                className="mb-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-bold uppercase tracking-[0.2em] sm:text-sm"
+                className="mb-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-bold uppercase tracking-[0.2em] sm:text-sm"
                 style={{ color: pal.accentBright }}
               >
-                <span>Chevrolet</span>
-                <span style={{ color: pal.divider }}>|</span>
-                <span>Buick</span>
-                <span style={{ color: pal.divider }}>|</span>
-                <span>GMC</span>
-                <span style={{ color: pal.divider }}>|</span>
-                <span>Cadillac</span>
+                {brands.map((brand, i) => (
+                  <span key={brand} className="flex items-center gap-4">
+                    {i > 0 && <span style={{ color: pal.divider }}>|</span>}
+                    <span>{brand}</span>
+                  </span>
+                ))}
               </div>
               <div className="h-px w-20" style={{ background: pal.heroLine }} />
               <h1 className="mt-6 max-w-2xl text-4xl font-black uppercase leading-[1.04] tracking-tight text-white sm:text-6xl">
                 Let&apos;s get you on the road.
               </h1>
               <p className="mt-5 max-w-xl text-base leading-7 text-[#e4e4e4] sm:text-lg">
-                Looking for your next GM vehicle or ready to sell your current one? Share a few details and {firstName}&apos;ll help you take the next step.
+                Looking for your next vehicle or ready to sell your current one? Share a few details and {firstName}&apos;ll help you take the next step.
               </p>
               <div className="mt-7 flex flex-wrap gap-3 text-sm font-semibold text-[#f4f1e8]">
                 {['Transparent pricing', 'No pressure', 'Fast response', 'Professional service'].map((label, i) => {
@@ -286,8 +289,8 @@ export default function LandingPage({ onGoToFunnel, repSlug }: LandingPageProps)
               />
               <TrustItem
                 icon={<Award className="h-5 w-5" />}
-                title="Full GM lineup"
-                text="One contact for Chevrolet, Buick, GMC, and Cadillac vehicles."
+                title="Full lineup"
+                text={`One contact for ${brandLine} vehicles.`}
                 accent={pal.accent}
               />
               <TrustItem
@@ -323,7 +326,7 @@ export default function LandingPage({ onGoToFunnel, repSlug }: LandingPageProps)
             </div>
           </div>
           <div className="mt-8 border-t border-black/10 pt-5 text-xs text-[#888888]">
-            {p.dealership_name || 'Mark Christopher Auto Center'} · Chevrolet · Buick · GMC · Cadillac
+            {p.dealership_name || 'Mark Christopher Auto Center'} · {brandLine}
           </div>
         </div>
       </footer>
