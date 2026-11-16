@@ -233,7 +233,7 @@ export default function SelfServeSignup({ onSuccess }: SelfServeSignupProps) {
 
         <p className="mt-4 text-center text-xs text-slate-500">
           Already have an account?{' '}
-          <a href="/" className="font-semibold text-emerald-400 hover:text-emerald-300">
+          <a href="./" className="font-semibold text-emerald-400 hover:text-emerald-300">
             Sign in
           </a>
         </p>
