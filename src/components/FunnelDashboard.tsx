@@ -394,12 +394,10 @@ export default function FunnelDashboard({ onEditProfile }: FunnelDashboardProps)
 
       {showLinkModal && (
         <MyLinkModal
-          link={personalLink}
-          copied={copied}
-          onCopy={copyPersonalLink}
-          joinLink={isAdmin ? joinLink : undefined}
-          copiedJoin={copiedJoin}
-          onCopyJoin={copyJoinLink}
+          link={isAdmin ? joinLink : personalLink}
+          copied={isAdmin ? copiedJoin : copied}
+          onCopy={isAdmin ? copyJoinLink : copyPersonalLink}
+          isAdmin={isAdmin}
           onClose={() => setShowLinkModal(false)}
         />
       )}
@@ -411,23 +409,16 @@ function MyLinkModal({
   link,
   copied,
   onCopy,
-  joinLink,
-  copiedJoin,
-  onCopyJoin,
+  isAdmin,
   onClose,
 }: {
   link: string;
   copied: boolean;
   onCopy: () => void;
-  joinLink?: string;
-  copiedJoin: boolean;
-  onCopyJoin: () => void;
+  isAdmin: boolean;
   onClose: () => void;
 }) {
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(link)}`;
-  const joinQrUrl = joinLink
-    ? `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(joinLink)}`
-    : '';
 
   return (
     <div
@@ -441,76 +432,46 @@ function MyLinkModal({
         <div className="mb-4 flex items-center justify-center gap-2">
           <QrCode className="h-5 w-5 text-slate-700" />
           <h2 className="text-lg font-bold text-slate-900">
-            {joinLink ? 'Your Links' : 'Your Customer Link'}
+            {isAdmin ? 'Team Signup Link' : 'Your Customer Link'}
           </h2>
         </div>
 
-        {/* Customer landing page link */}
-        <div className="mb-4">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Customer Landing Page
+        {isAdmin && (
+          <p className="mb-3 text-xs text-slate-500">
+            Share this link with new reps so they can create their own account. This link never expires.
           </p>
-          <div className="mx-auto mb-3 rounded-xl border border-slate-200 bg-white p-3">
-            <img src={qrUrl} alt="QR code for your customer link" className="mx-auto h-40 w-40" />
-          </div>
-          <div className="flex items-center gap-2">
-            <code className="flex-1 truncate rounded-lg bg-slate-100 px-3 py-2 text-xs text-slate-700">
-              {link}
-            </code>
-            <button
-              onClick={onCopy}
-              className="flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white transition hover:bg-slate-800"
-            >
-              {copied ? (
-                <>
-                  <CheckCircle2 className="h-3.5 w-3.5" />
-                  Copied
-                </>
-              ) : (
-                <>
-                  <Copy className="h-3.5 w-3.5" />
-                  Copy
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-
-        {/* Join link for admin — stable signup URL */}
-        {joinLink && (
-          <div className="border-t border-slate-200 pt-4">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-emerald-600">
-              Team Signup Link
-            </p>
-            <p className="mb-2 text-xs text-slate-500">
-              Share this link with new reps so they can create their own account. This link never expires.
-            </p>
-            <div className="mx-auto mb-3 rounded-xl border border-slate-200 bg-white p-3">
-              <img src={joinQrUrl} alt="QR code for team signup link" className="mx-auto h-40 w-40" />
-            </div>
-            <div className="flex items-center gap-2">
-              <code className="flex-1 truncate rounded-lg bg-slate-100 px-3 py-2 text-xs text-slate-700">
-                {joinLink}
-              </code>
-              <button
-                onClick={onCopyJoin}
-                className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700"
-              >
-                {copiedJoin ? (
-                  <>
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                    Copied
-                  </>
-                ) : (
-                  <>
-                    <Copy className="h-3.5 w-3.5" />
-                    Copy
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
         )}
+
+        <div className="mx-auto mb-3 rounded-xl border border-slate-200 bg-white p-3">
+          <img
+            src={qrUrl}
+            alt={isAdmin ? 'QR code for team signup link' : 'QR code for your customer link'}
+            className="mx-auto h-40 w-40"
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <code className="flex-1 truncate rounded-lg bg-slate-100 px-3 py-2 text-xs text-slate-700">
+            {link}
+          </code>
+          <button
+            onClick={onCopy}
+            className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-white transition ${
+              isAdmin ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-slate-900 hover:bg-slate-800'
+            }`}
+          >
+            {copied ? (
+              <>
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                Copied
+              </>
+            ) : (
+              <>
+                <Copy className="h-3.5 w-3.5" />
+                Copy
+              </>
+            )}
+          </button>
+        </div>
 
         <button
           onClick={onClose}
